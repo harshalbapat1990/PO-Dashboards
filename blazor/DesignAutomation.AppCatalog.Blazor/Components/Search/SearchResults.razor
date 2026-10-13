@@ -1,0 +1,29 @@
+@if (Results.Count > 0)
+{
+    <div class="list-group position-absolute shadow-sm"
+         style="z-index:1050; max-height:24rem; overflow-y:auto; min-width:22rem;">
+        @foreach (var group in Results.GroupBy(r => r.Type))
+        {
+            <div class="list-group-item list-group-item-secondary py-1 small text-uppercase fw-semibold">
+                @group.Key
+            </div>
+            @foreach (var result in group)
+            {
+                <button type="button"
+                        class="list-group-item list-group-item-action"
+                        @onclick="() => OnSelect.InvokeAsync(result)">
+                    <div class="fw-semibold">@result.Title</div>
+                    @if (!string.IsNullOrEmpty(result.Subtitle))
+                    {
+                        <div class="small text-muted">@result.Subtitle</div>
+                    }
+                </button>
+            }
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<SearchResult> Results { get; set; } = [];
+    [Parameter] public EventCallback<SearchResult> OnSelect { get; set; }
+}

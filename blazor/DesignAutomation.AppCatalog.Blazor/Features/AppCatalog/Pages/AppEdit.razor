@@ -1,0 +1,89 @@
+@page "/app/edit/{Id:guid}"
+@attribute [Authorize]
+@inject AppCatalogApiClient ApiClient
+@inject NavigationManager Navigation
+
+<PageHeader Title="Edit Application" />
+
+<LoadingSpinner Visible="_loading" Text="Loading application..." />
+
+@if (!_loading)
+{
+    @if (_model is null)
+    {
+        <ErrorMessage Message="@(_error ?? "Application not found.")" />
+    }
+    else
+    {
+        <AppForm Model="_model"
+                 OnSubmit="SaveAsync"
+                 Saving="_saving"
+                 Error="_error"
+                 SubmitLabel="Save"
+                 CancelHref="@($"/app/{Id}")" />
+    }
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private AppHeaderForm? _model;
+    private bool _loading = true;
+    private bool _saving;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var result = await ApiClient.GetAppAsync(Id);
+
+            if (result.IsSuccess && result.ResultObject is not null)
+                _model = AppHeaderForm.FromAppHeader(result.ResultObject);
+            else
+                _error = $"API returned: {result.ResultCode}";
+        }
+        catch (ApiException ex)
+        {
+            _error = $"Request failed ({(int)ex.StatusCode}): {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_model is null) return;
+
+        _saving = true;
+        _error = null;
+
+        try
+        {
+            var result = await ApiClient.UpdateAppAsync(_model.ToAppHeader());
+
+            if (result.IsSuccess && result.ResultObject)
+                Navigation.NavigateTo($"/app/{Id}");
+            else
+                _error = $"Save failed: {result.ResultCode}";
+        }
+        catch (ApiException ex)
+        {
+            _error = $"Request failed ({(int)ex.StatusCode}): {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

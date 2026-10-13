@@ -1,0 +1,155 @@
+@page "/app/review/{Id:guid}"
+@attribute [Authorize(Roles = "Admin")]
+@inject AppCatalogApiClient ApiClient
+@inject NavigationManager Navigation
+
+<PageHeader Title="Review Management" />
+
+<LoadingSpinner Visible="_loading" Text="Loading application..." />
+<ErrorMessage Message="_error" />
+
+@if (!_loading && _app is not null)
+{
+    <div class="card mb-3">
+        <div class="card-header">@_app.FullName</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Current Review</dt>
+                <dd class="col-sm-9">
+                    @if (!string.IsNullOrEmpty(_app.ReviewURL))
+                    {
+                        <a href="@_app.ReviewURL" target="_blank" rel="noopener noreferrer">@_app.ReviewURL</a>
+                    }
+                    else { <span class="text-muted">None</span> }
+                </dd>
+                <dt class="col-sm-3">Last Modified</dt>
+                <dd class="col-sm-9">@_app.Modified.ToString("yyyy-MM-dd HH:mm")</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">Update Review</div>
+        <div class="card-body">
+            <label class="form-label">Review URL / Notes</label>
+            <input class="form-control mb-2" @bind="_review" />
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" @onclick="SaveReviewAsync" disabled="@_saving">
+                    @if (_saving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    }
+                    Save Review
+                </button>
+                <button class="btn btn-outline-secondary" @onclick="TouchAsync" disabled="@_saving">
+                    Update Modified Date
+                </button>
+            </div>
+            @if (_status is not null)
+            {
+                <div class="alert alert-success mt-3 mb-0">@_status</div>
+            }
+        </div>
+    </div>
+}
+
+<a href="/app/@Id" class="btn btn-outline-secondary btn-sm">&#8592; Back to Application</a>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private AppHeader? _app;
+    private string _review = string.Empty;
+    private bool _loading = true;
+    private bool _saving;
+    private string? _error;
+    private string? _status;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var result = await ApiClient.GetAppAsync(Id);
+
+            if (result.IsSuccess && result.ResultObject is not null)
+            {
+                _app = result.ResultObject;
+                _review = _app.ReviewURL;
+            }
+            else
+            {
+                _error = $"API returned: {result.ResultCode}";
+            }
+        }
+        catch (ApiException ex)
+        {
+            _error = $"Request failed ({(int)ex.StatusCode}): {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task SaveReviewAsync()
+    {
+        _saving = true;
+        _error = null;
+        _status = null;
+
+        try
+        {
+            var result = await ApiClient.UpdateReviewAsync(Id, _review);
+
+            if (result.IsSuccess && result.ResultObject)
+                _status = "Review saved.";
+            else
+                _error = $"Save failed: {result.ResultCode}";
+        }
+        catch (ApiException ex)
+        {
+            _error = $"Request failed ({(int)ex.StatusCode}): {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task TouchAsync()
+    {
+        _saving = true;
+        _error = null;
+        _status = null;
+
+        try
+        {
+            var result = await ApiClient.TouchModifiedAsync(Id);
+
+            if (result.IsSuccess)
+                _status = $"Modified date updated to {result.ResultObject:yyyy-MM-dd HH:mm}.";
+            else
+                _error = $"Update failed: {result.ResultCode}";
+        }
+        catch (ApiException ex)
+        {
+            _error = $"Request failed ({(int)ex.StatusCode}): {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

@@ -1,0 +1,105 @@
+@page "/apps"
+@attribute [Authorize]
+@inject AppCatalogApiClient ApiClient
+@inject NavigationManager Navigation
+
+<PageHeader Title="Applications">
+    <Actions>
+        <AuthorizeView Roles="Admin">
+            <a href="/app/create" class="btn btn-primary btn-sm">Create</a>
+        </AuthorizeView>
+        <RefreshButton OnClick="LoadAsync" Disabled="_loading" />
+    </Actions>
+</PageHeader>
+
+<DataTable TItem="AppHeader"
+           Items="_sorted"
+           Loading="_loading"
+           Error="_error"
+           SearchPredicate="@((a, s) => a.FullName.Contains(s, StringComparison.OrdinalIgnoreCase))"
+           SearchPlaceholder="Search by name..."
+           EmptyMessage="No applications found."
+           LoadingText="Loading applications...">
+    <HeaderTemplate>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Production</th>
+            <th>Availability</th>
+            <th>Score</th>
+            <th>
+                <button class="btn btn-link p-0 text-decoration-none" @onclick="ToggleSort">
+                    Modified @(_sortDesc ? "↓" : "↑")
+                </button>
+            </th>
+        </tr>
+    </HeaderTemplate>
+    <RowTemplate Context="app">
+        <tr style="cursor:pointer" @onclick="() => GoToApp(app.ID)">
+            <td>@app.FullName</td>
+            <td class="text-muted small">@app.AppType</td>
+            <td>
+                @if (app.Production)
+                {
+                    <span class="badge bg-success">Yes</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">No</span>
+                }
+            </td>
+            <td><span class="badge bg-light text-dark border">@app.Availability</span></td>
+            <td>@app.Score</td>
+            <td class="text-muted small">@app.Modified.ToString("yyyy-MM-dd")</td>
+        </tr>
+    </RowTemplate>
+</DataTable>
+
+@code {
+    private List<AppHeader> _apps = [];
+    private bool _loading;
+    private string? _error;
+    private bool _sortDesc = true;
+
+    private IReadOnlyList<AppHeader> _sorted => (_sortDesc
+            ? _apps.OrderByDescending(a => a.Modified)
+            : _apps.OrderBy(a => a.Modified))
+        .ToList();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        StateHasChanged();
+
+        try
+        {
+            var result = await ApiClient.GetAppsAsync();
+
+            _apps = result.IsSuccess && result.ResultObject is not null
+                ? result.ResultObject
+                : [];
+
+            if (!result.IsSuccess)
+                _error = $"API returned: {result.ResultCode}";
+        }
+        catch (ApiException ex)
+        {
+            _error = $"Request failed ({(int)ex.StatusCode}): {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void ToggleSort() => _sortDesc = !_sortDesc;
+
+    private void GoToApp(Guid id) => Navigation.NavigateTo($"/app/{id}");
+}

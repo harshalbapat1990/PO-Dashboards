@@ -1,71 +1,66 @@
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using DesignAutomation.AppCatalog.Config;
-using DesignAutomation.AppCatalog.Security;
-using DesignAutomation.AppCatalog.Interface;
-using DesignAutomation.AppCatalog.Extensions;
 using DesignAutomation.AppCatalog.Data;
+using DesignAutomation.AppCatalog.Interface;
 using DesignAutomation.AppCatalog.Model;
-
-var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")?.GetEnumValue<EnvironmentType>(EnvironmentType.Local) ?? EnvironmentType.Local;
+using DesignAutomation.AppCatalog.Security;
 
 var host = new HostBuilder()
-    .ConfigureFunctionsWorkerDefaults()
-    .ConfigureLogging((ctx, log) =>
+    .ConfigureFunctionsWebApplication()
+    .ConfigureServices((context, services) =>
     {
-        log.ClearProviders();
+        services.AddApplicationInsightsTelemetryWorkerService();
+        services.ConfigureFunctionsApplicationInsights();
 
-        string? logLevel = ctx.Configuration["minLogLevel"];
-        string? sentry = ctx.Configuration["SentryDSN"];
-        
-        LogLevel minLevel = !String.IsNullOrWhiteSpace(logLevel) ? logLevel.GetEnumValue<LogLevel>(LogLevel.Trace, true) : LogLevel.Trace;
-        log.SetMinimumLevel(minLevel);
+        // response helpers use synchronous HttpResponseData.WriteString which Kestrel blocks by default
+        services.Configure<KestrelServerOptions>(o => o.AllowSynchronousIO = true);
 
-        // add sentry
-        log.AddSentry( options => {
-            options.Dsn = sentry;
-            options.EnableLogs = true;
-            options.MinimumEventLevel = minLevel;
-            options.AttachStacktrace = true;
-            options.Environment = $"{env}";
+        var appConfig = new AppConfiguration();
+        context.Configuration.Bind(appConfig);
+        services.AddSingleton(appConfig);
+
+        var githubConfig = new GithubAPIConfiguration
+        {
+            GitHubToken = appConfig.GitHubToken,
+            Topic = appConfig.Topic,
+            Environment = appConfig.Environment,
+        };
+        services.AddSingleton(githubConfig);
+
+        services.AddSingleton<IAppHeaderRepository>(_ =>
+            new AppHeaderRepository(appConfig.PrimaryDBConnStr, appConfig.PrimaryDatabase, "Apps"));
+        services.AddSingleton<IUsersRepository>(_ =>
+            new UsersMongoRepository(appConfig.PrimaryDBConnStr, appConfig.PrimaryDatabase, "Users"));
+
+        services.AddSingleton<IGitHubRepository>(sp =>
+        {
+            if (!githubConfig.IsValid())
+                return new UnconfiguredGitHubRepository();
+            return new GitHubRepository(githubConfig, sp.GetRequiredService<ILogger<GitHubRepository>>());
         });
-        
-        //log.AddProvider(NullLoggerProvider.Instance);
-    })
-    .ConfigureServices((ctx, services) =>
-    {
-        // load config values
-        AppConfiguration config = ctx.Configuration.Get<AppConfiguration>() ?? new();
-        config.Environment = env;
-        GithubAPIConfiguration gitConfig = ctx.Configuration.Get<GithubAPIConfiguration>() ?? new();
-        gitConfig.Environment = env;
 
-        //services.AddApplicationInsightsTelemetryWorkerService();
-        //services.ConfigureFunctionsApplicationInsights();
+        // anonymous security lets all requests through; swap for PingManager in production
+        services.AddSingleton<ISecurityManager, AnonynousSecurityManager>();
 
-        // add AppConfig to services -> technically we should try to avoid using AppConfig downstream
-        services.AddSingleton<AppConfiguration>( config );
-        services.AddSingleton<GithubAPIConfiguration>( gitConfig );
-
-        // inject different security managers for different environments
-        //if (config.Environment > EnvironmentType.Local)
-        services.AddScoped<ISecurityManager, BasicSecurityManager>( s => new BasicSecurityManager( new UsersMongoRepository( config.PrimaryDBConnStr, config.PrimaryDatabase, "Users" ), config.SigningKey ) { DisableClientCheck = !config.CheckClient} );
-        // else // no security on the back end
-        // {
-        //     services.AddScoped<ISecurityManager, AnonynousSecurityManager>();
-        // }
-
-        // load repos
-        services.AddScoped<IGitHubRepository, GitHubRepository>();
-        services.AddScoped<IAppHeaderRepository>(c => new AppHeaderRepository(config.PrimaryDBConnStr, config.PrimaryDatabase, "Apps" ));
-        services.AddScoped<IUsersRepository>(c => new UsersMongoRepository( config.PrimaryDBConnStr, config.PrimaryDatabase, "Users" ));
-
-        // create gateways
-        services.AddScoped<ISecurityGateway, SecurityGateway>();
-        services.AddScoped<ICommonGateway, CommonGateway>();
+        services.AddTransient<ICommonGateway, CommonGateway>();
+        services.AddTransient<ISecurityGateway, SecurityGateway>();
     })
     .Build();
 
 host.Run();
+
+// Placeholder used when GitHubToken / Topic are absent from local.settings.json
+sealed class UnconfiguredGitHubRepository : IGitHubRepository
+{
+    private static Task<T> Fail<T>() => Task.FromException<T>(
+        new InvalidOperationException("GitHub is not configured. Add GitHubToken and Topic to local.settings.json."));
+
+    public Task<List<ReadmeDTO>> ListReposByTopic(string topic) => Fail<List<ReadmeDTO>>();
+    public Task<List<ReadmeData>> ParseReposByTopic(string topic) => Fail<List<ReadmeData>>();
+    public Task<ReadmeData> ParseRepo(long id) => Fail<ReadmeData>();
+}

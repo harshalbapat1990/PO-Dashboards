@@ -1,0 +1,27 @@
+@page "/callback"
+
+@inject NavigationManager Navigation
+@inject ITokenStorage TokenStorage
+
+<p>Signing in...</p>
+
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = new Uri(Navigation.Uri);
+
+        var query =
+            System.Web.HttpUtility.ParseQueryString(
+                uri.Query);
+
+        var jwt = query["jwt"];
+
+        if (!string.IsNullOrWhiteSpace(jwt))
+        {
+            await TokenStorage.SetTokenAsync(jwt);
+        }
+
+        Navigation.NavigateTo("/");
+    }
+}

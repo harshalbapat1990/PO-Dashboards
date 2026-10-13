@@ -1,0 +1,177 @@
+Folder PATH listing for volume Windows
+Volume serial number is 7C64-7599
+C:.
+|   .gitignore
+|   Blazor_Frontend_Fork_Plan.txt
+|   folder_structure.txt
+|   README.md
+|   
++---.github
+|   \---workflows
+|           azure-static-web-apps-delightful-river-07022660f.yml
+|           main_appcatalog-api.yml
+|           main_appcatelog-dev-api.yml
+|           
++---api
+|   |   DesignAutomation.AppCatalog.sln
+|   |   
+|   \---DesignAutomation.AppCatalog
+|       |   DesignAutomation.AppCatalog.csproj
+|       |   host.json
+|       |   Program.cs
+|       |   
+|       +---API
+|       |       AppCatalogController.cs
+|       |       SecurityController.cs
+|       |       
+|       +---bin
+|       |   \---Debug
+|       |       \---net10.0
+|       +---Config
+|       |       AppConfiguration.cs
+|       |       GithubAPIConfiguration.cs
+|       |       
+|       +---Data
+|       |       AppHeaderRepository.cs
+|       |       GitHubRepository.cs
+|       |       IAppHeaderRepository.cs
+|       |       IUsersRepository.cs
+|       |       MongoDataManager.cs
+|       |       UsersMongoRepository.cs
+|       |       
+|       +---Extensions
+|       |       ByteExtensions.cs
+|       |       DataTypeConverters.cs
+|       |       DateTimeOffsetSerializer.cs
+|       |       EnumExtensions.cs
+|       |       NameValueExtensions.cs
+|       |       RequestHeaders.cs
+|       |       RequestResponses.cs
+|       |       StringExtensions.cs
+|       |       
+|       +---Interface
+|       |       CommonGateway.cs
+|       |       ICommonGateway.cs
+|       |       SecurityGateway.cs
+|       |       
+|       +---Logic
+|       |       EmailValidator.cs
+|       |       ReadMeParser.cs
+|       |       ScoreCalculator.cs
+|       |       
+|       +---Model
+|       |   |   APIResult.cs
+|       |   |   APIResultType.cs
+|       |   |   AppHeader.cs
+|       |   |   AppUser.cs
+|       |   |   Availability.cs
+|       |   |   CircularList.cs
+|       |   |   ClientHeaders.cs
+|       |   |   EnvironmentType.cs
+|       |   |   LogMessage.cs
+|       |   |   LogTimer.cs
+|       |   |   PingResponse.cs
+|       |   |   ReadmeData.cs
+|       |   |   Tier1AppType.cs
+|       |   |   
+|       |   \---DTOs
+|       |           AppHeaderDTO.cs
+|       |           AppNextPreviousDTO.cs
+|       |           EnumItem.cs
+|       |           LookupCollection.cs
+|       |           PoCDTO.cs
+|       |           ReadmeData.cs
+|       |           ReadmeDTO.cs
+|       |           RepoDTO.cs
+|       |           ReviewUpdateDTO.cs
+|       |           UpdatedDTO.cs
+|       |           
+|       +---obj
+|       |   \---Debug
+|       |       \---net10.0
+|       |           |   .NETCoreApp,Version=v10.0.AssemblyAttributes.cs
+|       |           |   DesignAutomation.AppCatalog.AssemblyInfo.cs
+|       |           |   DesignAutomation.AppCatalog.AssemblyInfoInputs.cache
+|       |           |   DesignAutomation.AppCatalog.GeneratedMSBuildEditorConfig.editorconfig
+|       |           |   DesignAutomation.AppCatalog.GlobalUsings.g.cs
+|       |           |   
+|       |           +---ref
+|       |           \---refint
+|       +---Security
+|       |       AppIdentity.cs
+|       |       Auth0Token.cs
+|       |       Auth0User.cs
+|       |       ClientHeaders.cs
+|       |       IOAuthManager.cs
+|       |       IOAuthUser.cs
+|       |       JWTManager.cs
+|       |       KeyChain.cs
+|       |       OAuthScopes.cs
+|       |       OAuthState.cs
+|       |       PingManager.cs
+|       |       SecurityManagers.cs
+|       |       TokenResponse.cs
+|       |       UserRoleLevel.cs
+|       |       
+|       \---Serializers
+|               FlagsArrayConverter.cs
+|               
+\---web
+    |   index.html
+    |   package-lock.json
+    |   package.json
+    |   vite.config.js
+    |   
+    +---public
+    |   |   favicon.ico
+    |   |   
+    |   \---images
+    |           jacobs.svg
+    |           
+    \---src
+        |   App.vue
+        |   main.js
+        |   router.js
+        |   staticwebapp.config.json
+        |   
+        +---assets
+        |       vue.svg
+        |       
+        +---components
+        |       Header.vue
+        |       HelpModal.vue
+        |       
+        +---js
+        |       base64.js
+        |       config.js
+        |       datamanager.js
+        |       messages.js
+        |       model.js
+        |       security.js
+        |       storage.js
+        |       utils.js
+        |       
+        +---scss
+        |       site.scss
+        |       
+        \---views
+            |   AccountView.vue
+            |   DocsView.vue
+            |   EditView.vue
+            |   ErrorView.vue
+            |   Get2View.vue
+            |   GetView.vue
+            |   GithubView.vue
+            |   HelpView.vue
+            |   HomeView.vue
+            |   NotFoundView.vue
+            |   PoCView.vue
+            |   ReposView.vue
+            |   UnauthorizedView.vue
+            |   UsersView.vue
+            |   
+            \---security
+                    CallbackView.vue
+                    FormLoginView.vue
+                    LoginView.vue
+                    

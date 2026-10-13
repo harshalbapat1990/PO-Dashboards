@@ -1,0 +1,649 @@
+BLAZOR FRONTEND FORK PLAN
+DesignAutomation.AppCatelog
+==================================================
+
+1. OBJECTIVE
+==================================================
+
+Fork the existing DesignAutomation.AppCatelog repository and introduce a
+new Blazor frontend while preserving the current Vue frontend, Azure
+Functions API, MongoDB database, and authentication behavior.
+
+The first milestone is a reversible Blazor App Catalog experience that
+reaches feature parity with the highest-value existing Vue workflows.
+Product Health Dashboard capabilities will be introduced incrementally
+after the Blazor foundation is stable.
+
+==================================================
+2. LOCKED ARCHITECTURE DECISIONS
+==================================================
+
+Frontend:
+- New Blazor Web App
+- .NET 10
+- Interactive Server rendering
+- Blazor is added in parallel with the existing Vue frontend
+- Existing Vue client remains in web/ during the migration
+
+Backend:
+- Existing Azure Functions isolated worker API remains authoritative
+- .NET 10
+- Existing api/v1/* contracts are reused
+- No ASP.NET Core backend migration
+- No new backend host during the initial frontend migration
+
+Database:
+- MongoDB remains the permanent database
+- Existing MongoDB repositories remain authoritative
+- No PostgreSQL migration
+- No Entity Framework Core migration
+
+Authentication:
+- Preserve the current Ping/JWT/client-header authentication contract
+- Do not introduce a second identity system during the frontend migration
+- Function keys, tokens, and secrets must not be committed to source control
+
+Charts:
+- Chart.js is the required charting library
+- All Blazor charts use a reusable Chart.js JavaScript interop wrapper
+- C# owns chart data and chart configuration models
+- JavaScript is limited to Chart.js instance creation, updates, resizing,
+  and disposal
+- Chart.js must be version-pinned and loaded locally or through a
+  package-managed/static asset rather than an unpinned CDN
+
+Explicitly excluded from the first fork milestone:
+- ASP.NET Core migration
+- PostgreSQL
+- Entity Framework Core
+- Hangfire
+- CQRS architecture migration
+- Azure DevOps synchronization engine
+- New authentication platform
+- Seed scripts or automated seed execution
+
+==================================================
+3. PHASE 0 - FORK AND REPOSITORY FOUNDATION
+==================================================
+
+Tasks:
+- Fork People-Places-Solutions/DesignAutomation.AppCatelog
+- Clone the fork locally
+- Configure the fork as origin
+- Preserve the original repository as upstream
+- Create a feature branch for the Blazor migration
+- Confirm the existing main branch builds before frontend changes
+- Document the dual-client transition in README.md
+- Define local prerequisites and startup commands
+- Add Blazor configuration guidance without committing secrets
+
+Repository structure after foundation:
+
+api/
+  DesignAutomation.AppCatalog/
+    Existing Azure Functions API
+web/
+  Existing Vue frontend retained for comparison and rollback
+blazor/
+  New Blazor frontend
+Blazor_Frontend_Fork_Plan.txt
+  This implementation plan
+
+Deliverable:
+The fork is clean, the existing API and Vue client remain intact, and the
+new frontend has a documented location and ownership boundary.
+
+==================================================
+4. PHASE 1 - BLAZOR APPLICATION SCAFFOLD
+==================================================
+
+Create a new Blazor Web App under:
+
+blazor/
+
+Target:
+- .NET 10
+- Interactive Server rendering
+
+Configure:
+- Development and production environments
+- API base URL
+- Function key configuration
+- Local settings that are excluded from source control
+- Logging suitable for local debugging
+- Routing and error handling
+
+Add the project to the existing solution only if doing so preserves the
+current Azure Functions startup behavior. Do not change the Functions
+project into an ASP.NET Core host.
+
+Initial shared Blazor components:
+- MainLayout
+- Navigation
+- TopBar
+- LocalUserSelector
+- ProductSelector
+- ThemeSelector
+- LoadingState
+- ErrorState
+- EmptyState
+- UnauthorizedState
+- StatusBadge
+- DataTable
+- FilterBar
+- Toolbar
+- Dialog
+- Notification
+
+Frontend organization:
+- Organize components and pages by feature rather than by one large page
+  directory
+- Keep API clients, models, state, and UI components in separate folders
+- Keep chart components under Components/Charts/
+- Keep product-health features separate from App Catalog parity pages
+
+Suggested structure:
+
+blazor/
+  Components/
+  Features/
+    AppCatalog/
+    Dashboard/
+    Security/
+    Sprint/
+    Products/
+    Settings/
+    Authentication/
+  Layout/
+  Models/
+  Services/
+  State/
+  wwwroot/
+    css/
+    js/
+
+Local authentication UI:
+- Provide a local user/role selector for dashboard development
+- Support the roles defined by the product plan where the current API can
+  represent them
+- Treat role selection as a development-only UI simulation
+- Keep this separate from the existing Ping/JWT compatibility adapter
+
+Deliverable:
+The Blazor application launches locally and displays a navigable shell
+without requiring backend changes.
+
+==================================================
+5. FRONTEND EXPERIENCE AND DESIGN SYSTEM
+==================================================
+
+The Blazor frontend should preserve recognizable App Catalog behavior while
+establishing the Product Health Dashboard visual foundation.
+
+Responsive layout:
+- Desktop: 12-column grid, 24px gutters, 32px page margins
+- Tablet: 8-column grid
+- Mobile: 4-column grid
+- Maximum content width approximately 1600px
+- Use stable dimensions for cards, charts, tables, toolbars, and controls
+- Prevent text, labels, and chart content from overlapping or resizing the
+  surrounding layout unexpectedly
+
+Spacing scale:
+- 4px, 8px, 12px, 16px, 24px, 32px, 48px, 64px
+
+Standard UI components:
+- KPI cards
+- Health cards
+- Metric cards
+- Chart cards
+- Table cards
+- Alert/risk cards
+- AI insight cards
+- Buttons and icon buttons
+- Dialogs
+- Forms
+- Tables
+- Filters
+- Toolbars
+- Notifications
+- Loading, empty, and error states
+
+Themes:
+- Light theme
+- Dark theme
+- Theme preference stored locally for the user
+- Theme changes must not break chart colors or contrast
+
+Accessibility target:
+- WCAG 2.2 AA
+- Keyboard navigation for all workflows
+- Visible focus indicators
+- Screen-reader labels and meaningful status announcements
+- High-contrast-compatible colors
+- Appropriate touch target sizes
+- Charts must have an accessible summary or equivalent tabular data
+
+Frontend interaction rules:
+- Use familiar icons for icon-only actions and provide tooltips
+- Use text labels for actions that are not self-evident
+- Use segmented controls, toggles, checkboxes, menus, and date inputs for
+  the corresponding interaction types
+- Keep loading, empty, error, and unauthorized states explicit
+- Avoid page-level explanatory text that duplicates visible controls
+
+Deliverable:
+The Blazor shell has a responsive, accessible visual system that can support
+both migrated App Catalog pages and future dashboard modules.
+
+==================================================
+6. PHASE 2 - TYPED API CLIENT
+==================================================
+
+Create a typed API client in the Blazor project. Components must use the
+client rather than constructing raw HTTP requests.
+
+The client must centralize:
+- API base URL
+- API route construction
+- Function key header
+- Timestamp header
+- Authorization header
+- Client headers required by the Functions API
+- JSON serialization
+- API response handling
+- 401 and other error handling
+- Cancellation and request failure behavior
+
+Mirror the existing response envelope:
+- APIResult<T>
+- APIResultType
+
+Initial models and DTOs:
+- AppHeader
+- AppHeaderDTO
+- ReadmeData
+- ReadmeLink
+- ReadmeMember
+- RepoDTO
+- PoCDTO
+- AppUser
+- AppNextPreviousDTO
+- PingResponse
+- User and role models required by the current API
+
+Initial endpoint coverage, based on the existing Vue DataManager:
+- GET api/v1/ping
+- GET api/v1/menus
+- GET api/v1/apps
+- GET api/v1/app/{id}
+- GET api/v1/apps/{id}
+- GET api/v1/pocs
+- GET api/v1/repos
+- GET api/v1/users
+- GET api/v1/github
+- GET api/v1/github/{id}
+- POST api/v1/app
+- PUT api/v1/app
+- DELETE api/v1/app/{id}
+
+Deliverable:
+The Blazor application can call the existing API through a tested,
+strongly typed client layer.
+
+==================================================
+7. PHASE 3 - AUTHENTICATION COMPATIBILITY
+==================================================
+
+Inspect and document the existing authentication flow from:
+- web/src/js/security.js
+- web/src/js/storage.js
+- web/src/views/security/
+- api/DesignAutomation.AppCatalog/Security/
+- api/DesignAutomation.AppCatalog/Extensions/RequestHeaders.cs
+
+Implement a Blazor authentication adapter that preserves the current
+contract rather than redesigning authentication.
+
+Requirements:
+- Support the existing token callback and token storage behavior
+- Send the required bearer token format
+- Send required client and timestamp headers
+- Route 401 responses to a Blazor login or unauthorized experience
+- Handle expired or invalid tokens consistently
+- Keep function keys and secrets in local configuration only
+- Avoid exposing server-only secrets to browser-visible configuration
+
+Authentication must be validated before protected pages are migrated.
+
+Deliverable:
+A Blazor user can authenticate using the existing API-compatible flow and
+protected API calls behave consistently with the Vue client.
+
+==================================================
+8. PHASE 4 - APP CATALOG PARITY
+==================================================
+
+Migrate read-only workflows first.
+
+Priority pages:
+- GitHub/app list
+- App or README detail
+- Repository list
+- PoC list
+- Users list
+- Account
+- Help
+- Error
+- Unauthorized
+- Not-found
+
+For every migrated page, provide:
+- Loading state
+- Empty state
+- API failure state
+- Unauthorized state where applicable
+- Navigation behavior
+- Responsive layout
+- Browser title updates where currently supported
+
+After read-only parity is stable, add:
+- Insert app
+- Update app
+- Delete app
+- Review/update actions
+
+Keep the Vue implementation unchanged and use it as the behavioral
+reference during migration.
+
+Deliverable:
+The main App Catalog workflows can be completed in Blazor while the Vue
+frontend remains available as a fallback.
+
+==================================================
+9. PHASE 5 - PRODUCT HEALTH VISUAL FOUNDATION
+==================================================
+
+After App Catalog parity, add reusable visual components that can support
+future product health dashboards.
+
+Components:
+- KpiCard
+- HealthScoreCard
+- MetricCard
+- ChartCard
+- StatusBadge
+- RiskCard
+- DataTable
+- FilterBar
+- DateRangeSelector
+- ProductSelector
+- ModuleContainer
+
+Dashboard framework responsibilities:
+- Define a product dashboard shell
+- Register available dashboard modules
+- Enable or disable modules per product
+- Reorder modules
+- Resize widgets within the responsive grid
+- Save and restore a product layout
+- Restore the default layout
+- Apply default filters
+- Refresh module data
+- Preserve loading, empty, error, and unauthorized states per module
+
+Initial product-health screens:
+- Local user selection
+- Executive Dashboard
+- Sprint Dashboard
+- Security Dashboard
+- Project/Product Settings
+- Dashboard Customization
+- Synchronization Status placeholder
+
+The first three dashboard screens should be scaffolded against mocked or
+currently available data only until the Functions API exposes the required
+health metrics. Do not present unavailable metrics as real data.
+
+Initially bind components only to information available from the current
+Azure Functions API and MongoDB model.
+
+The current API does not yet expose the full Product Health Dashboard data
+from the attached product plan. GitHub and Azure DevOps health metrics
+must therefore be treated as a later API/data-contract expansion while
+MongoDB remains the database.
+
+==================================================
+10. CHART.JS INTEGRATION PLAN
+==================================================
+
+Use Chart.js for all dashboard charts.
+
+Suggested Blazor structure:
+
+blazor/
+  Components/
+    Charts/
+      ChartCard.razor
+      LineChart.razor
+      BarChart.razor
+      DoughnutChart.razor
+      ChartModels.cs
+  wwwroot/
+    js/
+      chartInterop.js
+
+Chart responsibilities:
+
+C# / Blazor:
+- Define chart data models
+- Define labels and datasets
+- Define chart options
+- Control component lifecycle
+- Detect parameter/data changes
+- Invoke JavaScript interop
+- Dispose chart resources when components are removed
+
+JavaScript interop:
+- Locate the canvas element
+- Create Chart.js instances
+- Update existing chart instances
+- Resize charts
+- Destroy chart instances
+- Return useful errors to Blazor when initialization fails
+
+Chart rules:
+- Do not create raw Chart.js instances from individual pages
+- Do not duplicate chart lifecycle logic across components
+- Do not recreate a canvas unnecessarily when only data changed
+- Dispose chart instances during component disposal/navigation
+- Keep chart configuration serializable and testable
+- Use responsive chart sizing
+- Provide empty-data and loading states outside the canvas
+- Avoid charts that resize the surrounding layout unpredictably
+
+Initial chart types:
+- Line chart for trends
+- Bar chart for category comparisons
+- Doughnut chart for health/status distribution
+
+Future chart types, added only when supported by real data:
+- Area chart
+- Heatmap
+- Timeline
+- Sankey
+- Radar
+
+The MVP chart set is line, bar, and doughnut. Additional chart types must
+not be added solely as visual decoration; each requires a defined metric,
+accessible interpretation, and a responsive layout test.
+
+Chart validation:
+- Initial chart render
+- Data update
+- Option update
+- Responsive resize
+- Navigation away and disposal
+- Empty data
+- Invalid data
+- JavaScript interop failure
+- Multiple charts on one page
+- Desktop and mobile dimensions
+
+==================================================
+11. PHASE 6 - PRODUCT HEALTH DASHBOARD EXPANSION
+==================================================
+
+This phase follows App Catalog parity and the shared visual foundation.
+
+Potential dashboard modules:
+- Executive Overview
+- Sprint Health
+- Pull Requests
+- Security
+- Testing
+- Deployment
+- Technical Debt
+- AI Insights
+
+These modules require additional API contracts and MongoDB data models.
+They should be designed as separate, explicitly scoped backend work while
+preserving the Azure Functions and MongoDB architecture.
+
+The existing API is currently the source for App Catalog data only. Do not
+pretend that all Product Health metrics are available until the API has
+been extended and the data has been synchronized.
+
+==================================================
+12. VALIDATION PLAN
+==================================================
+
+Repository:
+- Confirm origin points to the fork
+- Confirm upstream points to the original repository
+- Confirm work is on a feature branch
+- Confirm no secrets are committed
+
+Backend regression:
+- Build the existing Functions project
+- Run the existing API locally
+- Verify that API behavior is unchanged
+
+Blazor:
+- Build the new Blazor project
+- Start Blazor locally
+- Verify navigation and error handling
+- Verify anonymous ping
+- Verify authenticated list and detail calls
+- Verify 401 handling
+- Verify token expiry behavior
+
+Parity:
+- Compare Blazor and Vue app/GitHub list behavior
+- Compare detail and navigation behavior
+- Compare logout and authentication behavior
+- Compare empty and failure states
+
+Charts:
+- Verify Chart.js renders correctly
+- Verify data updates do not duplicate canvas instances
+- Verify resize behavior
+- Verify chart disposal
+- Verify empty and invalid data behavior
+- Verify JavaScript interop errors are handled
+- Verify desktop and mobile layouts
+
+Frontend experience:
+- Verify local user/role selection changes role-aware UI state
+- Verify executive, sprint, and security dashboard shells render
+- Verify module enable/disable behavior
+- Verify module reorder, resize, save, restore, and default-layout flows
+- Verify light and dark themes
+- Verify responsive 12/8/4-column behavior
+- Verify keyboard navigation and visible focus indicators
+- Verify accessible chart summaries or equivalent data tables
+- Verify no text, controls, tables, or charts overlap at desktop or mobile
+- Verify touch targets and form controls remain usable on narrow screens
+
+Testing:
+- Add API client unit tests
+- Add response/error mapping tests
+- Add authentication adapter tests where practical
+- Add chart component/interoperability tests where practical
+- Run all available automated tests
+
+==================================================
+13. TRANSITION MILESTONE
+==================================================
+
+Keep web/ as the legacy Vue client until the Blazor frontend has agreed
+route, authentication, and workflow parity.
+
+At that point choose one deployment direction:
+- Serve Vue and Blazor side by side
+- Make Blazor the default frontend
+- Retire or archive the Vue frontend
+
+This decision is outside the initial fork and scaffold milestone.
+
+==================================================
+14. RELEVANT EXISTING FILES
+==================================================
+
+README.md
+api/DesignAutomation.AppCatalog.sln
+api/DesignAutomation.AppCatalog/DesignAutomation.AppCatalog.csproj
+api/DesignAutomation.AppCatalog/Program.cs
+api/DesignAutomation.AppCatalog/API/AppCatalogController.cs
+api/DesignAutomation.AppCatalog/Interface/CommonGateway.cs
+api/DesignAutomation.AppCatalog/Model/
+api/DesignAutomation.AppCatalog/Security/
+api/DesignAutomation.AppCatalog/Extensions/RequestHeaders.cs
+web/src/js/datamanager.js
+web/src/js/model.js
+web/src/js/security.js
+web/src/js/storage.js
+web/src/router.js
+web/src/views/
+web/src/views/security/
+web/src/staticwebapp.config.json
+
+==================================================
+15. FINAL IMPLEMENTATION PRINCIPLE
+==================================================
+
+Every milestone must produce a usable result:
+
+M0:
+Forked repository and documented architecture
+
+M1:
+Blazor shell launches locally
+
+M2:
+Typed API client and authentication compatibility work
+
+M3:
+App Catalog read-only parity
+
+M4:
+App Catalog edit workflows
+
+M5:
+Reusable product health components, dashboard shell, and Chart.js integration
+
+M6:
+Executive, Sprint, and Security dashboard shells with configurable modules
+
+M7:
+Product Health Dashboard API and module expansion
+
+M8:
+Blazor becomes the selected production frontend after validation
+
+The migration should remain incremental and reversible. The existing Azure
+Functions API and MongoDB database remain the foundation throughout.
+
+==================================================
+END OF PLAN
+==================================================

@@ -1,0 +1,97 @@
+@typeparam TItem
+
+<LoadingSpinner Visible="Loading" Text="@LoadingText" />
+<ErrorMessage Message="Error" />
+
+@if (!Loading && Error is null)
+{
+    @if (SearchPredicate is not null)
+    {
+        <div class="mb-3">
+            <input class="form-control form-control-sm w-auto"
+                   type="search"
+                   placeholder="@SearchPlaceholder"
+                   @bind="_search"
+                   @bind:event="oninput" />
+        </div>
+    }
+
+    @if (_pageItems.Count == 0)
+    {
+        <EmptyState Message="@EmptyMessage" />
+    }
+    else
+    {
+        <table class="table table-hover">
+            <thead>@HeaderTemplate</thead>
+            <tbody>
+                @foreach (var item in _pageItems)
+                {
+                    @RowTemplate(item)
+                }
+            </tbody>
+        </table>
+
+        @if (_totalPages > 1)
+        {
+            <nav aria-label="Table paging">
+                <ul class="pagination pagination-sm">
+                    <li class="page-item @(_page == 1 ? "disabled" : "")">
+                        <button class="page-link" @onclick="Prev">Previous</button>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Page @_page of @_totalPages</span>
+                    </li>
+                    <li class="page-item @(_page == _totalPages ? "disabled" : "")">
+                        <button class="page-link" @onclick="Next">Next</button>
+                    </li>
+                </ul>
+            </nav>
+        }
+
+        <small class="text-muted">@_filtered.Count item(s)</small>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<TItem> Items { get; set; } = [];
+    [Parameter, EditorRequired] public RenderFragment HeaderTemplate { get; set; } = default!;
+    [Parameter, EditorRequired] public RenderFragment<TItem> RowTemplate { get; set; } = default!;
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public int PageSize { get; set; } = 20;
+    [Parameter] public Func<TItem, string, bool>? SearchPredicate { get; set; }
+    [Parameter] public string SearchPlaceholder { get; set; } = "Search...";
+    [Parameter] public string EmptyMessage { get; set; } = "No items found.";
+    [Parameter] public string LoadingText { get; set; } = "Loading...";
+
+    private string _search = string.Empty;
+    private int _page = 1;
+
+    private List<TItem> _filtered => (SearchPredicate is null || string.IsNullOrWhiteSpace(_search)
+            ? Items
+            : Items.Where(i => SearchPredicate(i, _search)))
+        .ToList();
+
+    private int _totalPages =>
+        Math.Max(1, (int)Math.Ceiling(_filtered.Count / (double)PageSize));
+
+    private List<TItem> _pageItems
+    {
+        get
+        {
+            var page = Math.Min(_page, _totalPages);
+            return _filtered.Skip((page - 1) * PageSize).Take(PageSize).ToList();
+        }
+    }
+
+    private void Prev()
+    {
+        if (_page > 1) _page--;
+    }
+
+    private void Next()
+    {
+        if (_page < _totalPages) _page++;
+    }
+}

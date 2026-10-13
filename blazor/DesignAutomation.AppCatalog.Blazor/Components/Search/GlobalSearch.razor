@@ -1,0 +1,69 @@
+@using System.Timers
+@implements IDisposable
+@inject SearchService Search
+@inject NavigationManager Navigation
+
+<div class="position-relative">
+    <input class="form-control form-control-sm"
+           style="min-width:16rem;"
+           type="search"
+           placeholder="Search apps, repos, PoCs, users..."
+           value="@_term"
+           @oninput="OnInput" />
+
+    @if (_searching)
+    {
+        <div class="position-absolute top-100 mt-1 small text-muted">Searching...</div>
+    }
+    else
+    {
+        <SearchResults Results="_results" OnSelect="Navigate" />
+    }
+</div>
+
+@code {
+    private string _term = string.Empty;
+    private bool _searching;
+    private IReadOnlyList<SearchResult> _results = [];
+    private System.Timers.Timer? _debounce;
+
+    protected override void OnInitialized()
+    {
+        _debounce = new System.Timers.Timer(300) { AutoReset = false };
+        _debounce.Elapsed += async (_, _) => await InvokeAsync(RunSearchAsync);
+    }
+
+    private void OnInput(ChangeEventArgs e)
+    {
+        _term = e.Value?.ToString() ?? string.Empty;
+        _debounce?.Stop();
+        _debounce?.Start();
+    }
+
+    private async Task RunSearchAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_term) || _term.Length < 2)
+        {
+            _results = [];
+            StateHasChanged();
+            return;
+        }
+
+        _searching = true;
+        StateHasChanged();
+
+        _results = await Search.SearchAsync(_term);
+
+        _searching = false;
+        StateHasChanged();
+    }
+
+    private void Navigate(SearchResult result)
+    {
+        _term = string.Empty;
+        _results = [];
+        Navigation.NavigateTo(result.Url);
+    }
+
+    public void Dispose() => _debounce?.Dispose();
+}

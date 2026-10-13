@@ -1,0 +1,13 @@
+@* Renders a Bootstrap badge coloured by role name *@
+<span class="badge @_css">@Role</span>
+
+@code {
+    [Parameter, EditorRequired] public string Role { get; set; } = string.Empty;
+
+    private string _css => Role.ToLowerInvariant() switch
+    {
+        "admin" => "bg-danger",
+        "user"  => "bg-primary",
+        _       => "bg-secondary"
+    };
+}

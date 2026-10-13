@@ -1,0 +1,93 @@
+@inject LookupService Lookups
+
+<EditForm Model="Model" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Name <span class="text-danger">*</span></label>
+            <InputText class="form-control" @bind-Value="Model.FullName" />
+            <ValidationMessage For="() => Model.FullName" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">App Type <span class="text-danger">*</span></label>
+            <InputText class="form-control" @bind-Value="Model.AppType" />
+            <ValidationMessage For="() => Model.AppType" />
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">Description <span class="text-danger">*</span></label>
+            <InputTextArea class="form-control" rows="3" @bind-Value="Model.Description" />
+            <ValidationMessage For="() => Model.Description" />
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Availability</label>
+            <InputSelect class="form-select" @bind-Value="Model.Availability">
+                @foreach (var level in Enum.GetValues<AvailabilityLevel>())
+                {
+                    <option value="@level">@level</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Production Branch</label>
+            <InputText class="form-control" @bind-Value="Model.ProductionBranch" />
+        </div>
+
+        <div class="col-md-4 d-flex align-items-end">
+            <div class="form-check">
+                <InputCheckbox class="form-check-input" id="prod" @bind-Value="Model.Production" />
+                <label class="form-check-label" for="prod">In Production</label>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Website</label>
+            <InputText class="form-control" @bind-Value="Model.WebSite" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Review URL</label>
+            <InputText class="form-control" @bind-Value="Model.ReviewURL" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Team <small class="text-muted">(one per line)</small></label>
+            <InputTextArea class="form-control" rows="3" @bind-Value="Model.TeamText" />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Repositories <small class="text-muted">(one per line)</small></label>
+            <InputTextArea class="form-control" rows="3" @bind-Value="Model.ReposText" />
+        </div>
+    </div>
+
+    <ErrorMessage Message="Error" />
+
+    <div class="mt-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary" disabled="@Saving">
+            @if (Saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            }
+            @SubmitLabel
+        </button>
+        <a href="@CancelHref" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired] public AppHeaderForm Model { get; set; } = default!;
+    [Parameter] public EventCallback OnSubmit { get; set; }
+    [Parameter] public bool Saving { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public string SubmitLabel { get; set; } = "Save";
+    [Parameter] public string CancelHref { get; set; } = "/apps";
+
+    private async Task HandleSubmit() => await OnSubmit.InvokeAsync();
+
+    protected override async Task OnInitializedAsync() => await Lookups.GetAsync();
+}

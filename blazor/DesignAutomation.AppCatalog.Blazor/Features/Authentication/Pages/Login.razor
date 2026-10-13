@@ -1,0 +1,16 @@
+@page "/login"
+@inject NavigationManager Navigation
+@inject Microsoft.Extensions.Options.IOptions<ApiOptions> ApiOpts
+
+<p>Redirecting to login...</p>
+
+@code {
+    protected override void OnInitialized()
+    {
+        var opts    = ApiOpts.Value;
+        var baseUrl = opts.BaseUrl.TrimEnd('/');
+        var key     = Uri.EscapeDataString(opts.FunctionKey);
+
+        Navigation.NavigateTo($"{baseUrl}/api/login?code={key}", forceLoad: true);
+    }
+}

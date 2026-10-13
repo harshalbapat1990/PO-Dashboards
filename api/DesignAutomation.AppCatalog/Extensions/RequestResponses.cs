@@ -17,6 +17,7 @@ public static partial class RequestExtensions
     public static HttpResponseData EmptyResponse( this HttpRequestData req )
     {
         HttpResponseData resp = req.CreateResponse( HttpStatusCode.OK );
+        resp.Headers.Remove( "Content-Type" );
         resp.Headers.Add( "Content-Type", "text/plain; charset=utf-8" );
         resp.Headers.Add( "Content-Length", "0" );
         return resp;
@@ -31,9 +32,10 @@ public static partial class RequestExtensions
     public static HttpResponseData OKResponse<T>( this HttpRequestData req, APIResult<T> results, HttpStatusCode code = HttpStatusCode.OK )
     {
         HttpResponseData resp = req.CreateResponse( code );
+        resp.Headers.Remove( "Content-Type" );
         resp.Headers.Add( "Content-Type", "text/json; charset=utf-8" );
         //resp.Cookies.Append( new HttpCookie("raydreams", $"{Guid.NewGuid()}" ) { HttpOnly = true, Expires = DateTimeOffset.UtcNow.AddDays( 1 ) } );
-        resp.WriteString( JsonConvert.SerializeObject( results ), Encoding.UTF8 );
+        resp.WriteString( JsonConvert.SerializeObject( results ) );
         return resp;
     }
 
@@ -44,8 +46,9 @@ public static partial class RequestExtensions
     public static HttpResponseData BadResponse( this HttpRequestData req, string errorMessage )
     {
         HttpResponseData resp = req.CreateResponse( HttpStatusCode.BadRequest );
+        resp.Headers.Remove( "Content-Type" );
         resp.Headers.Add( "Content-Type", "text/plain; charset=utf-8" );
-        resp.WriteString( errorMessage, Encoding.UTF8 );
+        resp.WriteString( errorMessage );
 
         return resp;
     }
@@ -92,6 +95,7 @@ public static partial class RequestExtensions
         results.Debug = error;
 
         HttpResponseData resp = req.CreateResponse( HttpStatusCode.OK );
+        resp.Headers.Remove( "Content-Type" );
         resp.Headers.Add( "Content-Type", "text/json; charset=utf-8" );
         resp.WriteString( JsonConvert.SerializeObject( results ) );
 
@@ -120,6 +124,7 @@ public static partial class RequestExtensions
         APIResult<bool> results = new APIResult<bool> { ResultObject = false, ResultCode = APIResultType.Exception, Debug = error };
 
         HttpResponseData resp = req.CreateResponse( HttpStatusCode.OK );
+        resp.Headers.Remove( "Content-Type" );
         resp.Headers.Add( "Content-Type", "text/json; charset=utf-8" );
         resp.WriteString( JsonConvert.SerializeObject( results ) );
 
@@ -149,9 +154,10 @@ public static partial class RequestExtensions
         contentType = ( String.IsNullOrWhiteSpace( contentType ) ) ? "text/plain" : contentType.Trim();
 
         HttpResponseData resp = req.CreateResponse( code );
+        resp.Headers.Remove( "Content-Type" );
         resp.Headers.Add( "Content-Type", $"{contentType}; charset=utf-8" );
         resp.Headers.Add( "Content-Disposition", dispo.ToString() );
-        resp.WriteString( body, Encoding.UTF8 );
+        resp.WriteString( body );
         return resp;
     }
 

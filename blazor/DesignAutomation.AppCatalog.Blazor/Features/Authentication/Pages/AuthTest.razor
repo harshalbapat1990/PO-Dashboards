@@ -1,0 +1,31 @@
+@page "/auth-test"
+
+@inject DesignAutomation.AppCatalog.Blazor.Services.Authentication.AuthService AuthService
+
+<h3>Authentication Test</h3>
+
+<button class="btn btn-primary"
+        @onclick="CheckAuth">
+    Check Current User
+</button>
+
+<p>@Message</p>
+
+@code
+{
+    private string Message = "Not checked";
+
+    private async Task CheckAuth()
+    {
+        var user = await AuthService.GetCurrentUserAsync();
+
+        if (user == null)
+        {
+            Message = "No valid user found.";
+            return;
+        }
+
+        Message =
+            $"UserId: {user.UserId}, Role: {user.Role}";
+    }
+}
