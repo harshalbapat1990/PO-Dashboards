@@ -14,9 +14,6 @@ var host = new HostBuilder()
     .ConfigureFunctionsWebApplication()
     .ConfigureServices((context, services) =>
     {
-        services.AddApplicationInsightsTelemetryWorkerService();
-        services.ConfigureFunctionsApplicationInsights();
-
         // response helpers use synchronous HttpResponseData.WriteString which Kestrel blocks by default
         services.Configure<KestrelServerOptions>(o => o.AllowSynchronousIO = true);
 
@@ -24,43 +21,82 @@ var host = new HostBuilder()
         context.Configuration.Bind(appConfig);
         services.AddSingleton(appConfig);
 
-        var githubConfig = new GithubAPIConfiguration
+        var isLocal = appConfig.Environment == EnvironmentType.Local;
+        if (!string.Equals(appConfig.DatabaseProvider, "PostgreSql", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("This application requires DatabaseProvider=PostgreSql.");
+        if (!isLocal)
         {
-            GitHubToken = appConfig.GitHubToken,
-            Topic = appConfig.Topic,
-            Environment = appConfig.Environment,
-        };
-        services.AddSingleton(githubConfig);
+            services.AddApplicationInsightsTelemetryWorkerService();
+            services.ConfigureFunctionsApplicationInsights();
+        }
 
-        services.AddSingleton<IAppHeaderRepository>(_ =>
-            new AppHeaderRepository(appConfig.PrimaryDBConnStr, appConfig.PrimaryDatabase, "Apps"));
-        services.AddSingleton<IUsersRepository>(_ =>
-            new UsersMongoRepository(appConfig.PrimaryDBConnStr, appConfig.PrimaryDatabase, "Users"));
+        if (string.IsNullOrWhiteSpace(appConfig.PostgreSqlConnectionString))
+            throw new InvalidOperationException("PostgreSqlConnectionString must be configured.");
 
-        services.AddSingleton<IGitHubRepository>(sp =>
+        var postgresConfig = new Npgsql.NpgsqlConnectionStringBuilder(appConfig.PostgreSqlConnectionString);
+        if (isLocal && !IsLoopbackPostgresHost(postgresConfig.Host))
+            throw new InvalidOperationException("Local development only allows PostgreSQL on localhost or a loopback IP address.");
+
+        if (isLocal && !string.Equals(context.Configuration["AzureWebJobsStorage"], "UseDevelopmentStorage=true", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Local development requires AzureWebJobsStorage=UseDevelopmentStorage=true (Azurite).");
+
+        var dataSource = Npgsql.NpgsqlDataSource.Create(postgresConfig.ConnectionString);
+        services.AddSingleton(dataSource);
+        services.AddSingleton<IUsersRepository, PostgresUsersRepository>();
+        services.AddSingleton<IFoundationRepository, PostgresFoundationRepository>();
+        services.AddSingleton<IFoundationAccessRepository, PostgresFoundationAccessRepository>();
+        services.AddSingleton<IDashboardConfigurationRepository, PostgresDashboardConfigurationRepository>();
+        services.AddSingleton<IGitHubSourceDataRepository, PostgresGitHubSourceDataRepository>();
+
+        if (isLocal && !string.IsNullOrWhiteSpace(appConfig.GitHubAccessToken))
+            throw new InvalidOperationException("GitHubAccessToken must not be configured in Local mode; local development never connects to GitHub.");
+        if (!isLocal && !string.IsNullOrWhiteSpace(appConfig.GitHubAccessToken))
         {
-            if (!githubConfig.IsValid())
-                return new UnconfiguredGitHubRepository();
-            return new GitHubRepository(githubConfig, sp.GetRequiredService<ILogger<GitHubRepository>>());
-        });
+            services.AddHttpClient<IGitHubSnapshotSource, GitHubRestSnapshotSource>(client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(5);
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", appConfig.GitHubAccessToken.Trim());
+            });
+        }
 
-        // anonymous security lets all requests through; swap for PingManager in production
-        services.AddSingleton<ISecurityManager, AnonynousSecurityManager>();
+        // Authentication is required in every environment; Local uses a dedicated
+        // password-protected token endpoint and never calls an external identity provider.
+        if (!string.IsNullOrWhiteSpace(appConfig.TokenKey))
+        {
+            var tokenKey = Convert.FromBase64String(appConfig.TokenKey);
+            if (tokenKey.Length != 32)
+                throw new InvalidOperationException("TokenKey must decode to exactly 32 bytes.");
+
+            services.AddSingleton<ISecurityManager>(sp => new BasicSecurityManager(
+                sp.GetRequiredService<IUsersRepository>(), tokenKey)
+            {
+                DisableClientCheck = !appConfig.CheckClient
+            });
+        }
+        else
+        {
+            throw new InvalidOperationException("TokenKey must be configured; anonymous authentication is disabled.");
+        }
+
+        if (isLocal && (appConfig.LocalAdminPassword?.Length ?? 0) < 20)
+            throw new InvalidOperationException("LocalAdminPassword must contain at least 20 characters in ignored local.settings.json.");
+        if (isLocal && string.IsNullOrWhiteSpace(appConfig.LocalAdminEmail))
+            throw new InvalidOperationException("LocalAdminEmail must be set in ignored local.settings.json for local-only admin access.");
 
         services.AddTransient<ICommonGateway, CommonGateway>();
-        services.AddTransient<ISecurityGateway, SecurityGateway>();
     })
     .Build();
 
 host.Run();
 
-// Placeholder used when GitHubToken / Topic are absent from local.settings.json
-sealed class UnconfiguredGitHubRepository : IGitHubRepository
+static bool IsLoopbackPostgresHost(string? host)
 {
-    private static Task<T> Fail<T>() => Task.FromException<T>(
-        new InvalidOperationException("GitHub is not configured. Add GitHubToken and Topic to local.settings.json."));
+    if (string.IsNullOrWhiteSpace(host))
+        return false;
 
-    public Task<List<ReadmeDTO>> ListReposByTopic(string topic) => Fail<List<ReadmeDTO>>();
-    public Task<List<ReadmeData>> ParseReposByTopic(string topic) => Fail<List<ReadmeData>>();
-    public Task<ReadmeData> ParseRepo(long id) => Fail<ReadmeData>();
+    return host.Split(',', StringSplitOptions.TrimEntries).All(candidate =>
+        string.Equals(candidate, "localhost", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(candidate, "127.0.0.1", StringComparison.Ordinal)
+        || string.Equals(candidate, "::1", StringComparison.Ordinal));
 }
+

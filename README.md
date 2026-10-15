@@ -1,203 +1,153 @@
-# App Catalog
-
-## Description
-
-App Catalog collects metadata on DA Apps from GitHub using the GitHub API.
-
-### Metadata
-Required fields. Bolding the key is optional but only use a colon `:` as the delimiter for now. Links can be the simple or Markdown format.
-
-- **Is Production** : true
-- **Production Branch** : main
-- **Project Management** : https://github.com/People-Places-Solutions/DesignAutomation.AppCatelog/issues
-- **Website** : https://appcatalog.jacobs.com
-- **Availability** : 95.0%
-
-### Other Repos
-
-* https://github.com/People-Places-Solutions/DesignAutomation.README-Template
-
-### Use Case
-
-We need to filter out all the GTE repos including DA, AoD, and TS from the 2000 GitHub repos and dashboard them in one easy to see place.
-This dashboard just pulls GTE repos and parses some info from the README to surface here. It will also show some basic metrics in one place.
-
-### Size
-
-Whatever the headcount of GTE is.
-
-### Availability
-
-Downtime should not exceed 2 days.
-
-## Team
-
-| Member                       | Role               |
-| ---------------------------- | ------------------ |
-| tag.guillory@jacobs.com      | Lead Developer     |
-
-## Documents
-
-* [Software Architecture Documents](https://jacobsengineering.sharepoint.com/:fl:/r/contentstorage/x8FNO-xtskuCRX2_fMTHLaA_XwPbq5JAlMfaM3OGxMA/Document%20Library/Copilot/Software%20Design%20Process.loop?d=w0adfb6ebe5f245fbabb6843a59ac0653&csf=1&web=1&e=wV2f92&nav=cz0lMkZjb250ZW50c3RvcmFnZSUyRng4Rk5PLXh0c2t1Q1JYMl9mTVRITGFBX1h3UGJxNUpBbE1mYU0zT0d4TUEmZD1iJTIxMnFrSmVPS2NvRVMwZmNQQmZWMkloVW9WelB1N2Z1NUR1VmRLZTUyczQxNE5Na01VVEg4SFI0ckdNaTNZWE1LLSZmPTAxWU80QldDSExXM1BRVjRYRjdOQzJYTlVFSEpNMllCU1QmYz0lMkYmYT1Mb29wQXBwJnA9JTQwZmx1aWR4JTJGbG9vcC1wYWdlLWNvbnRhaW5lciZ4PSU3QiUyMnclMjIlM0ElMjJUMFJUVUh4cVlXTnZZbk5sYm1kcGJtVmxjbWx1Wnk1emFHRnlaWEJ2YVc1MExtTnZiWHhpSVRKeGEwcGxUMHRqYjBWVE1HWmpVRUptVmpKSmFGVnZWbnBRZFRkbWRUVkVkVlprUzJVMU1uTTBNVFJPVFd0TlZWUklPRWhTTkhKSFRXa3pXVmhOU3kxOE1ERlpUelJDVjBORVdVeFVUMVpPVkVWT1FWWkNXVVpCV0RKTFNGazBSVlJETnclM0QlM0QlMjIlMkMlMjJpJTIyJTNBJTIyNmMyOTY0NTUtNzZlZi00NTk1LWJhOTctYTcyNTRlMWFkYmRjJTIyJTdE)
-
-# Tech Stack
-
-<!-- Descibe the primary tech stack being used -->
-
-* C#/ASP.NET 10
-* vue.js 3
-* Mongo
-* Ping
-* Octokit/GitHub API
-
-# Project Setup
-
-## Making Changes
-
-- Make a new branch for your changes
-- Commit your changes and Push to the new Branch
-  - For now - all web app changes are automatically deployed to the GUI
-- Run the Dev API Action to publish to Development
-- Test using a local Web App against the Dev APIs
-- If Testing is accepted, then run the Production API Action
-
-## Setting up a New App
-
-[Vite Setup](https://vitejs.dev/guide/)
-
-Create a new app folder and drop that folder onto VS Code.
-
-Make sure you have the official vue extension installed.
-
-Create two folders at the top level of the project:
-+ api
-+ web
-
-## Installing vue.js & vite
-
-change to the web folder and install vite
-
-```sh
-npm install -D vite
-```
-
-Now template your first vue web app using
-
-```sh
-npm create vite@latest . -- --template vue
-```
-Say yes to installing `create-vite`.
-Ignore any existing files in the folder as they are probably just hidden OS files.
-
-Move the **README.md** and **.gitignore** files to the top level of the project.
-
-Open **package.json** and edit the app name and version.
-
-## Add in vue-router, Bootstrap and sass
-
-```sh
-npm install vue-router@latest
-npm install bootstrap@latest
-```
-
-You may get an error trying to update or install npm packages in the global cache. Delete the cache using
-```sh
-cd /Users/<my_id>/.npm
-sudo rm -rf _cacache
-npm update
-```
-
-### Installing other Packages
-
-to install and uninstall a package
-```sh
-npm install <package_name>
-npm uninstall <package_name>
-```
-
-## Run the App
-
-A basic app should work now. Then update all packages and run locally using:
-
-```sh
-npm update
-npm run dev
-```
-
-If you want to build the web site locally you can use
-```sh
-npm run build
-```
-
-## Add a Settings File
-
-You will need to manually add a `.env.local` settings file to the root of the web app similar to the APIs. You can get the values from another developer or copy the YML `env:` section **only**. DO NOT commit this file to the repo. The YML script will create a new one on the service each time.
-
-```
-VITE_baseURL: ''
-VITE_apiKey: ''
-```
-
-When running locally, you must choose an API to point to in the baseURL setting. If you use Localhost APIs then an API Key and Token are not required.
-
-## Restting Packages
-
-This will remove your local node packages, clean the caches and re-install them all
-
-```sh
-rm -rf node_modules
-npm cache clean --force
-npm install
-```
-
-## Running the APIs
-
-First you must create a new .NET isolated Azure Function in the api folder using whatever method you like. It's easiest to install the Azure Function extension in Visual Studio Code.
-
-[Azure Functions Documentation](https://learn.microsoft.com/en-us/azure/azure-functions/how-to-create-function-azure-cli?pivots=programming-language-csharp&tabs=windows%2Cbash%2Cazure-cli)
-
-```sh
-func init --worker-runtime dotnet-isolated
-```
-
-Run the functions using:
-
-```sh
-cd api/<api_proj_dir>
-func start
-```
-
-to debug
-
-```sh
-cd api/<api_proj_dir>
-func host start --dotnet-isolated-debug
-```
-
-After build the terminal will block waiting for the debugger - use Command-Shift-P and choose debugger and attach to the running process (usually the first one listed).
-
-## CORS
-
-If you don't bind the API to the Static Web App you will need to modify CORS in the Azure Function to include all possible client origination domains.
-
-## ID Management
-
-Use Ping to authenticate a user
-
-[Ping Docs](https://apidocs.pingidentity.com/pingone/auth/v1/api/#get-authorize-authorization_code-get)
-
-### Getting a Test Token
-
-Use Postman to login using the OAuthLogin method with query parameters set to
-```
-?echo=true&method=scrape
-```
-This will give you a complete Login URL which you can cut and paste to the browser and login and ultimately get the token back in the same browser window.
-
-## Swagger Documentation
-
-Add `Microsoft.Azure.Functions.Worker.Extensions.OpenApi` to automatically create Swagger API Doc endpoints.
-
-## Cleanup
-
-You can remove any **.vscode** folders that are NOT at the top level of the project.
+# Product Health Dashboard
+
+The Product Health Dashboard is being delivered in stages. The target client is
+the existing Vue 3 app in `web/`; the Azure Functions .NET isolated worker in
+`api/DesignAutomation.AppCatalog/` is the application API; PostgreSQL is the
+data store. Existing MongoDB records are intentionally abandoned. MongoDB,
+Docker, and old-data migration are not part of the development setup.
+
+## Local prerequisites
+
+- .NET SDK **10.0.400** (pinned in `global.json`)
+- Node.js **24.13.0** or later and npm
+- PostgreSQL running locally; the current development database is
+  `dashboard_dev` at `localhost:5433`
+- Azurite for the local Azure Functions host storage emulator
+
+Local API configuration must use loopback PostgreSQL and Azurite. Local mode
+fails closed if those settings are not present. It does not instantiate the
+GitHub client, call OAuth/identity endpoints, use MongoDB, or emit telemetry.
+GitHub/Azure DevOps references entered in setup are stored as configuration;
+no provider sync runs in Stage 0.
+
+## Configure PostgreSQL and API
+
+1. Create `api/DesignAutomation.AppCatalog/local.settings.json` from
+   `api/DesignAutomation.AppCatalog/local.settings.template.json`.
+2. Set `PostgreSqlConnectionString` to your local account and
+   `dashboard_dev` database. Never commit this file or put database credentials
+   in Vue configuration.
+3. Generate a base64 `TokenKey` from 32 random bytes and set a private
+   `LocalAdminPassword` of at least 20 characters. Set `LocalAdminEmail` to the
+   local development identity. These values are used only by the local API;
+   the local token endpoint is disabled outside `Environment=Local`.
+   In PowerShell, this creates values locally (copy them directly into the
+   ignored settings file; do not send them in chat or commit them):
+
+   ```powershell
+   $keyBytes = New-Object byte[] 32
+   $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+   $rng.GetBytes($keyBytes)
+   [Convert]::ToBase64String($keyBytes)
+   $rng.Dispose()
+   ```
+
+   Generate a separate local password with the same command and a separate
+   random byte array, or use a password manager to create a unique value.
+4. Ensure `AzureWebJobsStorage` is `UseDevelopmentStorage=true` and start
+   Azurite.
+5. Apply SQL migrations in filename order using DBeaver or `psql`:
+   `001_stage0_foundation.sql` through `005_github_record_relationships.sql`.
+   Each script is safe to reapply and records its version in `schema_migrations`.
+   Migration 002 drops the unused legacy `apps` table and renames the minimal
+   identity table for Product Health. Back up first; old App Catalog data is
+   intentionally abandoned.
+6. Start the API in a PowerShell window:
+
+   ```powershell
+   $env:FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT = "1"
+   Set-Location api/DesignAutomation.AppCatalog
+   dotnet run
+   ```
+
+The local host listens at `http://localhost:7071`. The Product Health API
+includes local sign-in, foundation/product and access management, per-product
+dashboard configuration, and GitHub snapshot read/import routes. Product
+endpoints require a signed JWT with the relevant product or portfolio grant.
+The local token endpoint is enabled only with `Environment=Local`; it validates
+the configured email/password and creates or updates the local admin identity
+in PostgreSQL. Retired App Catalog and external OAuth endpoints have been
+removed.
+
+## GitHub data in local development
+
+The `/github-data` Vue view reads repository, branch, commit, pull request,
+release, Actions, and security records stored in PostgreSQL. The local API does
+not contact GitHub and has no GitHub token setting. To load a source snapshot,
+an Admin may POST a normalized snapshot to:
+
+`POST /api/v1/foundation/products/{productId}/github/import`
+
+The JSON body contains `repositoryUrl` and a `records` array. Each record has
+`entityType`, `externalId`, optional `parentExternalId`, and a `data` object with
+the normalized fields defined in
+`PostgresGitHubSourceDataRepository.cs`. Supported types are `repository`,
+`branch`, `commit`, `pull_request`, `release`, `workflow`, `workflow_run`, and
+`security_alert`. Imports are transactional and repeatable; records must belong
+to a repository already linked to the product. A normalized record import is
+available only in Local mode and requires an Admin JWT. Read requests are
+product-authorized and paginated. `POST /api/v1/foundation/products/{productId}/github/sync`
+is available outside Local mode to Admins and product/portfolio managers. It
+fetches only a repository already linked to that product, stores the normalized
+snapshot, and accepts no token in the request. Configure `GitHubAccessToken`
+only in the deployment's secret environment (for example, a Key Vault-backed
+app setting); the API rejects that setting in Local mode. Use a fine-grained
+read-only token with repository Metadata/Contents, Pull requests, Actions,
+Dependabot alerts, Code scanning alerts, and Secret scanning alerts read
+permissions, restricted to the repositories the dashboard needs. See GitHub's
+official endpoint documentation for [branches and contents](https://docs.github.com/en/rest/branches/branches),
+[pull requests](https://docs.github.com/en/rest/pulls/pulls),
+[Actions](https://docs.github.com/en/rest/actions/workflows),
+[Dependabot](https://docs.github.com/en/rest/dependabot/alerts),
+[code scanning](https://docs.github.com/en/rest/code-scanning/code-scanning), and
+[secret scanning](https://docs.github.com/en/rest/secret-scanning/secret-scanning).
+The connector follows GitHub's [pagination links](https://docs.github.com/en/rest/using-the-rest-api/using-pagination-in-the-rest-api)
+and rate-limit retry guidance (including `Retry-After`); it never persists the
+secret value returned by secret scanning.
+
+## Configure and run Vue
+
+1. In `web/`, create ignored `.env.local` for non-secret client settings only
+   if needed. During `npm run dev`, API base URLs are forced to the Vite
+   same-origin `/api` proxy targeting `localhost:7071`; remote API URLs and
+   client-side Function keys are ignored in development.
+2. Start Vue in another PowerShell window:
+
+   ```powershell
+   Set-Location web
+   npm install
+   npm run dev
+   ```
+
+3. Open the local Vite URL printed by npm and navigate to `/foundation`.
+   Sign in using `LocalAdminEmail` and `LocalAdminPassword` from the ignored API
+   settings file. Create an organization, portfolio, product, teams, and
+   optional provider references. No GitHub or Azure DevOps connection is made.
+
+## Database backup, recovery, and reset
+
+Before schema changes or sample-data reset, create a PostgreSQL custom-format
+backup from DBeaver: right-click `dashboard_dev` → **Tools** → **Backup**, use
+custom format, and save the file outside the repository. Restore through
+DBeaver's **Tools → Restore** into a separate empty database first, then verify
+`schema_migrations` and row counts before using it. Do not overwrite the only
+backup.
+
+Migrations are forward-only, idempotent scripts. If an apply fails, retain the
+database, capture the error, restore the backup into a scratch database if
+needed, and correct/prepare a new migration; do not mark the version manually.
+To reset a disposable development database, create a backup first, stop the
+API, and use DBeaver to drop and recreate the `public` schema, then rerun all
+SQL migrations in order. This permanently deletes that schema's data and must
+only be used for the local development database.
+
+There is no MongoDB rollback path because the old data is intentionally not
+retained or migrated. Recovery means restoring a PostgreSQL backup or
+reinitializing the disposable local database.
+
+## Stage tracking
+
+See `Product_Health_Dashboard_Progress_Plan.txt` for task status, evidence,
+open acceptance checks, and the stage delivery sequence. A successful build or
+host startup alone does not verify API/database workflows, authentication,
+network isolation, or UI behavior.

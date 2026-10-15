@@ -1,0 +1,900 @@
+PRODUCT HEALTH DASHBOARD
+STAGE-WISE DATA SCOPE
+==================================================
+
+1. PURPOSE
+==================================================
+
+This document defines the data that the Product Health Dashboard will contain and display at each implementation stage.
+
+The key distinction is between:
+
+1. Source data pulled from GitHub and Azure DevOps.
+2. Normalized data stored by the application.
+3. Metrics calculated by the application.
+4. Health scores derived from metrics.
+5. Management-level aggregations.
+6. AI inputs and outputs.
+
+The data model should be built progressively so that future dashboard capabilities can be added without redesigning the entire database.
+
+==================================================
+2. STAGE 0 — FOUNDATION
+==================================================
+
+Purpose:
+Establish the basic organizational, product and configuration data.
+
+ORGANIZATION / PRODUCT DATA
+
+- Organization
+- Portfolio
+- Product
+- Product Owner
+- Product Manager
+- Global Product Lead
+- Engineering Manager
+- Scrum Master
+- Security Lead
+- Teams
+- Team members
+
+PRODUCT CONFIGURATION
+
+- Product status
+- Product description
+- Product type
+- Product owner
+- Product manager
+- Teams
+- Linked GitHub repositories
+- Linked Azure DevOps projects
+- Enabled dashboard modules
+- Module order
+- Widget configuration
+- Dashboard layout
+
+INTEGRATION CONFIGURATION
+
+- GitHub organization
+- GitHub repositories
+- Azure DevOps organization
+- Azure DevOps projects
+- Synchronization frequency
+- Last successful synchronization
+- Last failed synchronization
+
+==================================================
+3. STAGE 1 — CORE PLATFORM
+==================================================
+
+This stage establishes the master/reference data.
+
+ORGANIZATION HIERARCHY
+
+Organization
+    |
+    v
+Portfolio
+    |
+    v
+Product
+    |
+    v
+Team
+    |
+    +---- Repository
+    |
+    +---- Azure DevOps Project
+
+PRODUCT DATA
+
+- Product ID
+- Product name
+- Description
+- Status
+- Product Owner
+- Product Manager
+- Global Product Lead
+- Teams
+- Start date
+- Target dates
+- Linked repositories
+- Linked Azure projects
+
+USER DATA
+
+- User
+- Role
+- Product access
+- Portfolio access
+- Permissions
+
+==================================================
+4. STAGE 2 — DASHBOARD CONFIGURATION
+==================================================
+
+This stage establishes the configurable dashboard framework.
+
+MODULE CONFIGURATION
+
+For every product:
+
+- Module enabled/disabled
+- Module order
+- Widget visibility
+- Widget size
+- Dashboard layout
+- Default filters
+- Default date range
+
+INITIAL MODULES
+
+- Executive Overview
+- Sprint Health
+- Pull Requests
+- Security
+- Testing
+- Deployment
+- Technical Debt
+- AI Insights
+
+No major engineering metrics are required at this stage. The purpose is to establish the framework that will display them.
+
+==================================================
+5. STAGE 3 — GITHUB DATA
+==================================================
+
+This is the first major engineering-data stage.
+
+REPOSITORY DATA
+
+- Repository ID
+- Repository name
+- Description
+- URL
+- Visibility
+- Default branch
+- Repository status
+- Created date
+- Updated date
+- Archived status
+- Primary language
+- Languages
+- Repository size
+
+BRANCH DATA
+
+- Branch name
+- Default branch
+- Protected status
+- Last commit
+- Last activity
+
+COMMIT DATA
+
+- Commit ID
+- Author
+- Committer
+- Commit date
+- Branch
+- Commit message
+- Files changed
+- Additions
+- Deletions
+
+PULL REQUEST DATA
+
+- PR ID
+- Title
+- Author
+- Status
+- Created date
+- Updated date
+- Closed date
+- Merged date
+- Source branch
+- Target branch
+- Reviewer(s)
+- Review status
+- Approval status
+- Comments
+- Changes
+- Additions
+- Deletions
+
+RELEASE DATA
+
+- Release ID
+- Release name
+- Tag
+- Version
+- Author
+- Created date
+- Published date
+- Draft status
+- Prerelease status
+
+GITHUB ACTIONS
+
+- Workflow
+- Workflow run
+- Branch
+- Trigger
+- Status
+- Result
+- Started
+- Completed
+- Duration
+- Failure reason
+
+GITHUB SECURITY
+
+- Alert ID
+- Alert type
+- Repository
+- Severity
+- Package/code affected
+- Created date
+- Updated date
+- Status
+- Resolution
+- Resolved date
+
+Specifically:
+
+- Dependabot
+- Code Scanning
+- Secret Scanning
+
+==================================================
+6. STAGE 4 — AZURE DEVOPS DATA
+==================================================
+
+This stage provides the delivery and Agile data.
+
+AZURE DEVOPS PROJECT
+
+- Project ID
+- Project name
+- State
+- Visibility
+- Description
+
+ITERATIONS / SPRINTS
+
+- Sprint ID
+- Sprint name
+- Start date
+- End date
+- State
+- Project
+
+WORK ITEMS
+
+Types:
+
+- Epic
+- Feature
+- User Story
+- Task
+- Bug
+
+Store:
+
+- Work item ID
+- Work item type
+- Title
+- Description
+- State
+- Reason
+- Assigned user
+- Created date
+- Changed date
+- Closed date
+- Priority
+- Severity
+- Iteration
+- Area
+- Tags
+- Parent
+- Children
+- Story points / effort
+- Original estimate
+- Remaining work
+- Completed work
+
+BUGS
+
+Additional information:
+
+- Severity
+- Priority
+- State
+- Assigned user
+- Created date
+- Resolved date
+- Closed date
+- Area
+- Sprint
+- Reopen count
+
+PIPELINES
+
+- Pipeline ID
+- Pipeline name
+- Branch
+- Run ID
+- Run status
+- Run result
+- Started
+- Completed
+- Duration
+- Trigger
+- Commit
+- Failure information
+
+TESTING
+
+- Test plan
+- Test suite
+- Test case
+- Test run
+- Test result
+- Passed
+- Failed
+- Blocked
+- Skipped
+- Duration
+
+==================================================
+7. STAGE 5 — SYNCHRONIZATION DATA
+==================================================
+
+This stage adds operational information around the integrations.
+
+SYNCHRONIZATION
+
+For every synchronization:
+
+- Integration
+- Product
+- Start time
+- End time
+- Duration
+- Status
+- Records retrieved
+- Records inserted
+- Records updated
+- Records deleted
+- Errors
+- Warnings
+- Last successful sync
+- Last failed sync
+
+DATA FRESHNESS
+
+The dashboard should show when data was last synchronized.
+
+Example:
+
+GitHub:
+Last synchronized 12 minutes ago
+
+Azure DevOps:
+Last synchronized 18 minutes ago
+
+This prevents users from assuming the dashboard represents live information when it does not.
+
+==================================================
+8. STAGE 6 — EXECUTIVE DASHBOARD DATA
+==================================================
+
+At this stage, raw source data is transformed into Product Owner-friendly metrics.
+
+PRODUCT OVERVIEW
+
+- Overall health
+- Health trend
+- Product status
+- Current sprint
+- Sprint progress
+- Release status
+- Open risks
+
+DELIVERY
+
+- Sprint completion %
+- Planned vs completed
+- Velocity
+- Carry-over
+- Blocked work
+- Scope change
+- Cycle time
+- Lead time
+
+ENGINEERING
+
+- Open PRs
+- Average PR age
+- PR review time
+- Merge rate
+- Commit activity
+- Release frequency
+
+QUALITY
+
+- Open bugs
+- Critical bugs
+- High-priority bugs
+- Bug trend
+- Bug resolution time
+- Reopened bugs
+
+SECURITY
+
+- Critical vulnerabilities
+- High vulnerabilities
+- Medium vulnerabilities
+- Open vulnerabilities
+- New vulnerabilities
+- Aging vulnerabilities
+- Resolved vulnerabilities
+
+CI/CD
+
+- Build success rate
+- Failed builds
+- Deployment frequency
+- Failed deployments
+- Deployment trend
+
+TESTING
+
+- Test pass rate
+- Failed tests
+- Blocked tests
+- Test execution trend
+
+==================================================
+9. STAGE 7 — SPRINT DASHBOARD DATA
+==================================================
+
+Focus specifically on Azure DevOps.
+
+SPRINT INFORMATION
+
+- Sprint name
+- Start date
+- End date
+- Days elapsed
+- Days remaining
+
+WORK
+
+- Planned work
+- Completed work
+- Remaining work
+- Added work
+- Removed work
+- Carry-over
+- Blocked work
+
+WORK ITEM BREAKDOWN
+
+- Epic
+- Feature
+- Story
+- Task
+- Bug
+
+For each:
+
+- Count
+- Story points
+- Completed %
+- Remaining %
+
+SPRINT HEALTH
+
+- Burndown
+- Velocity
+- Completion rate
+- Scope change
+- Blocked items
+- Bug count
+- Risk indicators
+
+==================================================
+10. STAGE 8 — SECURITY DASHBOARD DATA
+==================================================
+
+Focus specifically on GitHub security information.
+
+VULNERABILITY INVENTORY
+
+For each vulnerability:
+
+- Repository
+- Alert ID
+- Type
+- Severity
+- Package/code
+- Created date
+- Age
+- Status
+- Resolution
+- Resolved date
+
+SUMMARY
+
+- Total vulnerabilities
+- Critical
+- High
+- Medium
+- Low
+- New
+- Resolved
+- Open
+- Aging
+
+TRENDS
+
+- Vulnerabilities over time
+- Critical vulnerability trend
+- Resolution trend
+- Mean time to remediation
+
+==================================================
+11. STAGE 9 — HEALTH SCORE DATA
+==================================================
+
+This stage adds a new analytical layer using existing data.
+
+CATEGORY SCORES
+
+- Delivery
+- Quality
+- Security
+- Testing
+- Reliability
+- Documentation
+- Technical Debt
+
+Each category stores:
+
+- Raw metrics
+- Normalized metrics
+- Category score
+- Weight
+- Weighted contribution
+
+OVERALL SCORE
+
+Store:
+
+- Overall score
+- Score band
+- Calculation date
+- Previous score
+- Score change
+- Score trend
+
+Example:
+
+Product Health: 82
+
+Delivery:       88
+Quality:        79
+Security:       71
+Testing:        91
+Reliability:    84
+
+HISTORICAL DATA
+
+Example:
+
+Date        Score
+01 Aug      87
+08 Aug      84
+15 Aug      82
+22 Aug      86
+
+==================================================
+12. STAGE 10 — PRODUCT MANAGER DASHBOARD DATA
+==================================================
+
+This stage aggregates multiple products.
+
+PRODUCT COMPARISON
+
+For each product:
+
+- Overall health
+- Health trend
+- Delivery score
+- Quality score
+- Security score
+- Testing score
+- Sprint status
+- Open risks
+- Critical vulnerabilities
+- Release status
+
+PORTFOLIO-LEVEL METRICS
+
+- Total products
+- Healthy products
+- Products needing attention
+- At-risk products
+- Critical products
+- Average health score
+- Health trend
+- Security exposure
+- Delivery trend
+
+FILTERING
+
+Allow filtering by:
+
+- Product Manager
+- Product Owner
+- Portfolio
+- Product
+- Health status
+- Risk level
+
+==================================================
+13. STAGE 11 — GLOBAL PRODUCT LEAD DASHBOARD
+==================================================
+
+This is the highest aggregation layer.
+
+ORGANIZATION-WIDE DATA
+
+- Total products
+- Total portfolios
+- Total teams
+- Average health
+- Health distribution
+- Health trend
+
+RISK
+
+- Products at risk
+- Products in critical state
+- Critical security issues
+- Delivery risks
+- Quality risks
+
+COMPARATIVE ANALYTICS
+
+- Best-performing products
+- Lowest-performing products
+- Largest health improvements
+- Largest health declines
+- Security hotspots
+- Delivery hotspots
+
+EXECUTIVE TRENDS
+
+- Overall organization health
+- Security trend
+- Delivery trend
+- Quality trend
+- Release trend
+
+==================================================
+14. STAGE 12 — AI DATA
+==================================================
+
+AI should consume structured metrics and trends rather than directly interpreting thousands of raw GitHub/Azure records.
+
+AI INPUT
+
+- Current health score
+- Previous health score
+- Metric changes
+- Sprint performance
+- PR metrics
+- Security metrics
+- Bug metrics
+- Deployment metrics
+- Testing metrics
+- Release information
+- Risks
+- Recent significant changes
+
+AI OUTPUT
+
+EXECUTIVE SUMMARY
+
+- What happened?
+
+HEALTH EXPLANATION
+
+- Why did the score change?
+
+RISK IDENTIFICATION
+
+- What should the Product Owner be concerned about?
+
+RECOMMENDATIONS
+
+- What should the team investigate?
+
+RELEASE CONFIDENCE
+
+- Does the available data indicate increasing release risk?
+
+Example:
+
+"Product health declined from 87 to 76 primarily because sprint carry-over increased, three high-severity vulnerabilities remain open, and PR review time increased by 32%."
+
+==================================================
+15. OVERALL DATA FLOW
+==================================================
+
+                    GITHUB
+                      |
+          +-----------+-----------+
+          |                       |
+     Repositories              Security
+     Commits                   Alerts
+     PRs                       Scanning
+     Releases
+     Actions
+          |
+          v
+   GITHUB INTEGRATION
+          |
+          |
+          +-----------------------+
+                                  |
+                                  v
+                             POSTGRESQL
+                                  ^
+                                  |
+          +-----------------------+
+          |
+   AZURE DEVOPS
+          |
+     Projects
+     Work Items
+     Sprints
+     Bugs
+     Pipelines
+     Tests
+          |
+          v
+ AZURE DEVOPS INTEGRATION
+
+
+POSTGRESQL
+    |
+    +---- Raw Engineering Data
+    |
+    +---- Calculated Metrics
+    |
+    +---- Health Scores
+    |
+    +---- Historical Trends
+    |
+    +---- Risks
+    |
+    +---- AI Input
+             |
+             v
+        BLAZOR DASHBOARD
+             |
+       +-----+------+
+       |            |
+      PO        Management
+
+==================================================
+16. DATA ARCHITECTURE PRINCIPLE
+==================================================
+
+The application should build the data model in layers.
+
+LAYER 1 — SOURCE DATA
+
+GitHub + Azure DevOps data.
+
+LAYER 2 — NORMALIZED DATA
+
+Common representations of:
+
+- Pull Requests
+- Work Items
+- Bugs
+- Builds
+- Tests
+- Releases
+- Security alerts
+- Other engineering entities
+
+LAYER 3 — METRICS
+
+Examples:
+
+- Cycle time
+- Velocity
+- PR age
+- Vulnerability age
+- Build success rate
+- Test pass rate
+- Deployment frequency
+- Lead time
+
+LAYER 4 — HEALTH
+
+- Category scores
+- Overall product score
+- Historical score
+- Score trends
+
+LAYER 5 — MANAGEMENT
+
+Product
+    |
+Product Manager
+    |
+Portfolio
+    |
+Global Product Lead
+
+LAYER 6 — AI
+
+- Explanations
+- Risks
+- Recommendations
+- Summaries
+- Release confidence
+
+==================================================
+17. KEY DESIGN PRINCIPLE
+==================================================
+
+The system should pull and retain sufficient source data to support future metrics without repeatedly changing the underlying integration architecture.
+
+The dashboard should not directly depend on GitHub or Azure DevOps for every screen load.
+
+Instead:
+
+GitHub / Azure DevOps
+        |
+        v
+Synchronization
+        |
+        v
+PostgreSQL
+        |
+        v
+Normalized Data
+        |
+        v
+Metrics
+        |
+        v
+Health Scores
+        |
+        v
+Blazor Dashboard
+        |
+        v
+AI Insights
+
+This provides:
+
+- Fast dashboard performance
+- Historical trends
+- Cross-system analytics
+- Resilience to external API outages
+- Reduced external API dependency
+- Consistent metric calculations
+- A stable foundation for future dashboard modules
+
+==================================================
+END OF STAGE-WISE DATA SCOPE
+==================================================

@@ -16,6 +16,18 @@ public enum UserRoleLevel
     [Description("user")]
     User = 1,
 
+    /// <summary>Read access granted at product or portfolio scope.</summary>
+    [Description("viewer")]
+    Viewer = 1,
+
+    /// <summary>May maintain assigned product data.</summary>
+    [Description("productmanager")]
+    ProductManager = 20,
+
+    /// <summary>May maintain products in an assigned portfolio.</summary>
+    [Description("portfoliomanager")]
+    PortfolioManager = 40,
+
     /// <summary>Powerful user in the site who can modify most everything</summary>
     [Description("admin")]
     Admin = 90

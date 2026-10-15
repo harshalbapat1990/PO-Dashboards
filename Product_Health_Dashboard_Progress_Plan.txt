@@ -1,0 +1,811 @@
+PRODUCT HEALTH DASHBOARD
+STAGE-WISE DELIVERY AND PROGRESS TRACKER
+DesignAutomation.AppCatelog
+==================================================
+
+SNAPSHOT DATE: 14 October 2026
+SOURCE SCOPE: Product_Health_Dashboard_Stage_Wise_Data_Scope.txt
+RELATED PLAN: Blazor_Frontend_Fork_Plan.txt (historical context; superseded
+             for Product Health frontend delivery)
+DELIVERY MODEL: Deliver and verify one stage at a time
+DATABASE DECISION: Start with a clean PostgreSQL database. Abandon existing
+                   MongoDB data; no data migration or backward compatibility
+                   is required. Rebuild any retained features on the new data.
+FRONTEND DECISION: Use the existing Vue.js app in web/ for Product Health.
+                   Blazor source was removed on 14 October 2026.
+DATABASE HOSTING: Use locally installed PostgreSQL for development. Docker
+                  and managed PostgreSQL are not required for local dev.
+
+==================================================
+1. HOW TO USE THIS TRACKER
+==================================================
+
+Task status:
+[ ] TODO        Work has not started.
+[~] IN PROGRESS Work is underway.
+[x] IMPLEMENTED Source changes are present; acceptance is not yet verified.
+[V] VERIFIED    Stage acceptance checks passed and evidence is recorded.
+[!] BLOCKED     Work cannot proceed; record the blocker and owner/action.
+
+For each task, update its status and append evidence/date in the Evidence
+column. Do not mark a task VERIFIED based on source inspection alone. A stage
+is complete only when all required tasks are VERIFIED and its exit gate passes.
+Keep later stages TODO/BLOCKED until prerequisite stages are complete.
+
+Evidence format:
+Evidence: <test/check/result, artifact or source reference> | Date: YYYY-MM-DD
+
+Except where dated evidence is explicitly recorded below, this tracker does not
+claim a build, runtime, integration, database, or test check has passed.
+
+==================================================
+2. CURRENT IMPLEMENTATION BASELINE
+==================================================
+
+Observed in source and user-provided checks:
+- Vue in `web/` is the selected frontend. The only active UI route is the
+  Stage 0 foundation setup screen; legacy Blazor source has been removed.
+- Azure Functions currently exposes only `LocalDevelopmentToken`,
+  `ListFoundationProducts`, and `CreateFoundationProduct`. The user confirmed
+  this route list from the running host on 2026-10-14.
+- PostgreSQL is the only application database. Existing MongoDB data is
+  intentionally abandoned. Migration 001 creates the foundation schema;
+  migration 002 removes the unused App Catalog `apps` table and renames the
+  minimal user table. The user confirmed both versions and resulting table
+  names in DBeaver.
+- The user reports .NET SDK 10.0.400, successful product creation and login,
+  product persistence after an API restart, and successful backup/restore to
+  a scratch database. Functions logs show a successful foundation list call.
+- API project build after removal of obsolete OAuth/Sentry code succeeded with
+  0 warnings and 0 errors using a temporary output folder. Vue production
+  build succeeded; Bootstrap Sass deprecation warnings remain.
+- Local API configuration requires loopback PostgreSQL and Azurite. OAuth,
+  GitHub client, Sentry, and legacy App Catalog API controllers are removed;
+  Application Insights registration is conditional on non-local environment.
+  Local Vite requests proxy only to localhost:7071. No packet capture was run.
+- Credential ignore rules cover local settings and env files. Those paths are
+  absent from Git's tracked file list. A redacted high-confidence scan of
+  nonignored repository files found no private-key, GitHub token, Slack token,
+  or Azure storage-key patterns. This is not a substitute for a dedicated
+  secret-scanning product.
+- Stages 1-12 remain unimplemented: source ingestion, configurable dashboards,
+  metrics, scores, management rollups, and AI.
+
+Initial stage status:
+Stage 0: [V] VERIFIED (local data workflow, both migrations, recovery, latest
+         API/Vue builds, and the trimmed running Functions route list verified.)
+Stages 1-12: [ ] TODO (no stage-scope implementation found.)
+
+==================================================
+3. STAGE CHECKLIST
+==================================================
+
+STAGE 0 — FOUNDATION
+Status: [V] VERIFIED — the local PostgreSQL/Vue workflow, product persistence,
+backup/restore, both schema migrations, latest API/Vue builds, and trimmed
+Functions route list have been verified.
+Prerequisite: None
+
+[V] Inspect existing App Catalog/MongoDB implementation and identify which
+    old data is intentionally abandoned. | Evidence: source inspection
+    2026-10-13; user decision 2026-10-14
+[V] Define the new Product Health PostgreSQL configuration and local
+    development target. | Evidence: user supplied `dashboard_dev` on
+    localhost:5433 2026-10-14.
+[V] Create and connect to the separate local `dashboard_dev` database.
+    | Evidence: DBeaver query returned dashboard_dev, current_user=postgres,
+    server=127.0.0.1:5433; user report 2026-10-14.
+[V] Apply initial schema and confirm version/table creation.
+    | Evidence: DBeaver reports schema_migrations version
+    001_stage0_foundation and all expected Stage 0 tables; script ran
+    successfully; user report 2026-10-14.
+[V] Add versioned, repeatable SQL migrations for the initial schema, cleanup,
+    and migration bookkeeping. | Evidence: user confirms migrations 001/002
+    are applied and listed in DBeaver on 2026-10-14.
+[V] Record that all legacy MongoDB data is intentionally abandoned and that
+    no data migration, reconciliation, or backward compatibility is required.
+[V] Remove the unused MongoDB migration tool, MongoDB driver/BSON/runtime
+    repositories, and old Docker compose configuration. Retained App Catalog
+    repositories now use PostgreSQL. | Evidence: source/package search found
+    no MongoDB references in the active API; 2026-10-14. Current API project
+    builds cleanly and the local data path has been exercised by the user.
+[V] Define organization, portfolio, product, people, teams, source links,
+    product settings, module settings, layouts, and integration/sync settings.
+[V] Add PostgreSQL repositories and typed Functions API contracts/endpoints
+    for foundation configuration. | Evidence: user creates/lists product via
+    Vue and confirms API list function succeeded; DBeaver confirms schema.
+[V] Configure ignored Functions `local.settings.json` for PostgreSQL, Azurite,
+    JWT signing, and local admin access. | Evidence: user reports successful
+    local login and product creation through Vue on 2026-10-14; source requires
+    TokenKey, LocalAdminEmail, and LocalAdminPassword. Secret values were not
+    inspected or copied into this tracker.
+[V] Add local-only service boundaries so local API requests cannot use
+    remote PostgreSQL, external identity, provider APIs, or outbound telemetry.
+    | Evidence: Program.cs local loopback/Azurite guards, local-only token
+    endpoint, removal of OAuth/GitHub/Sentry clients and external controllers,
+    conditional telemetry registration, and Vite proxy; user confirms only
+    local foundation routes are listed. No packet capture is claimed.
+[V] Build and run the Vue app locally; sign in and create a product through
+    the local API. | Evidence: user reports `npm ci`, `npm run build` success,
+    Vite dev server at localhost:5173, successful login and product save on
+    2026-10-14. Build emitted Sass deprecation warnings; npm reported 7 high
+    severity audit findings and an unapproved @parcel/watcher install script.
+    Those dependency findings have not been investigated.
+[V] Add a local-only admin token workflow that writes its user to PostgreSQL;
+    protect product setup operations using Admin JWT authorization.
+    | Evidence: user reports successful login and product creation through
+    Vue/local API on 2026-10-14; code: LocalDevelopmentAuthController.cs,
+    FoundationController.cs, Program.cs.
+[V] Protect database credentials and provider tokens; keep operational logs
+    useful without exposing credentials. | Evidence: ignored settings patterns,
+    local-only provider boundaries and exception logging inspected; 2026-10-14.
+    Evidence: ignored local settings/env paths are not tracked; redacted scan
+    found no high-confidence key/token patterns in nonignored files; user
+    backup/restore succeeded; 2026-10-14. No dedicated secret scanner used.
+[V] Document local PostgreSQL configuration, schema initialization, backup,
+    restore, reset, Vue/API startup, and local authentication. No Docker setup
+    is required. | Evidence: README.md replaced with current local workflow;
+    2026-10-14.
+[V] Verify the Product Health foundation API uses local PostgreSQL.
+    | Evidence: user reports login and product creation, product persistence
+    after Functions API restart, and successful ListFoundationProducts call
+    in Functions logs on 2026-10-14.
+[V] Retire App Catalog endpoints and external OAuth/GitHub API routes;
+    preserve only the local auth and Stage 0 foundation endpoints.
+    | Evidence: source controllers/clients removed; user's running Functions
+    listing on 2026-10-14 shows only the intended three functions.
+[V] Add a repeatable cleanup migration dropping the unused App Catalog apps
+    table and renaming minimal identity storage for Product Health.
+    | Evidence: user confirms versions 001 and 002, `product_health_users`, and
+    absence of `apps`/`app_users` in DBeaver on 2026-10-14.
+[V] Remove the unused Blazor frontend implementation.
+    | Evidence: repository `blazor/` source tree removed through approved
+    filesystem action on 2026-10-14. Historical plan/tracker documents remain.
+
+Stage 0 validation evidence:
+- User reports successful local login/product creation, product persistence
+  after API restart, DBeaver migration 001/002 and backup/restore checks, and a
+  successful Product Health list request in Functions logs (2026-10-14).
+- User confirmed the latest Functions host starts and lists only
+  CreateFoundationProduct, ListFoundationProducts, and LocalDevelopmentToken
+  (2026-10-14).
+- API project build after cleanup succeeded with 0 warnings and 0 errors using
+  a temporary output folder so the user's running host was not stopped.
+- Vue production build succeeded. Sass deprecation warnings remain in the
+  Bootstrap stylesheet. npm previously reported 7 high severity advisories and
+  an unapproved optional `@parcel/watcher` install script; no dependency fix
+  was applied as part of Stage 0.
+- Secret checks are limited to ignore/tracked-file checks and a redacted
+  high-confidence pattern scan; no dedicated secret scanner or packet capture
+  was available/run. No secret values were printed or added to this file.
+- For local development, set `DOTNET_CLI_TELEMETRY_OPTOUT=1` and
+  `FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT=1` if telemetry opt-out is desired.
+
+Exit gate:
+[V] New Product Health foundation works against local PostgreSQL; Vue
+    foundation screens work through the Functions API; schema initialization
+    and recovery are documented and exercised. Existing MongoDB data
+    migration and backward compatibility are explicitly not acceptance items.
+Evidence so far: user reports DBeaver migrations 001/002 and backup-restore, Vue
+build/login/create flow, product persistence after API restart, and a successful
+foundation list call in Functions logs on 2026-10-14. Latest API project build
+succeeded with 0 warnings/errors; latest Functions host started and listed only
+the three intended functions. Date: 2026-10-14
+
+STAGE 1 — CORE PLATFORM
+Status: [V] VERIFIED — schema, implementation, and local API acceptance
+scenarios passed.
+Prerequisite: Stage 0 VERIFIED
+
+[x] Implement organization → portfolio → product → team relationships and
+    repository/Azure DevOps project assignments. Product setup persists the
+    hierarchy, teams/members, and source references; list responses include
+    the hierarchy and team data.
+[x] Implement product ID, name, description, status, owner, manager, global
+    lead, engineering manager, scrum master, security lead, start/target
+    dates, and linked source projects. Product create/edit persist these
+    fields; status and date ordering are validated.
+[x] Implement users, roles, product/portfolio access, and permissions.
+    Global roles are Admin/User; scoped roles are User (read), ProductManager
+    (manage product), and PortfolioManager (manage products in portfolio).
+    User and grants are persisted in PostgreSQL.
+[x] Add validation for required fields, references, uniqueness, and invalid
+    hierarchy/access assignments. Foreign keys, case-insensitive uniqueness,
+    status/date constraints, email validation, role allowlists, and scoped
+    resource/user checks are implemented.
+[x] Add typed API operations and Vue management workflows for hierarchy,
+    products, teams, and access. Admin can create/list users, grant product or
+    portfolio access, and create/edit product/team data.
+[x] Enforce authorization on API operations, not only by hiding UI controls.
+    Product listing filters non-admin users to explicit scoped grants; update
+    requires Admin or a product/parent-portfolio management grant; user and
+    grant administration endpoints require Admin.
+
+[V] Apply `api/DesignAutomation.AppCatalog/Database/Migrations/003_stage1_core_platform.sql`
+    to the local database and verify migration row, constraints, and access
+    tables. User confirmed `003_stage1_core_platform`, both scoped-access
+    tables, and product status/date constraints in DBeaver. Date: 2026-10-14
+[V] Exercise Admin, scoped Viewer, scoped Manager, invalid reference, duplicate
+    product/team, and unauthorized API scenarios against a temporary local
+    Functions host. A local acceptance runner creates temporary test users and
+    records, creates scoped role JWTs in process, and removes the records in its
+    cleanup path. Non-admin token issuance remains an identity-provider task;
+    the test runner does not add such an endpoint to the application.
+
+Exit gate:
+[V] Hierarchy, product assignments, and access persist across API requests;
+    authorized and unauthorized API scenarios are verified.
+Evidence: user confirmed DBeaver migration 003, access tables, constraints, and
+the Vue user/access workflows. API project and acceptance runner builds passed
+with 0 warnings/errors. The Stage 1 acceptance runner passed Admin login and
+authorization, anonymous rejection (401), product/portfolio access grants,
+Viewer read-only access and filtering, PortfolioManager write access, unassigned
+user filtering, Admin-only user management (401 for scoped user), missing-resource
+grant rejection (404), duplicate product (409), duplicate team and invalid date
+rejection (400), and persistence of hierarchy, teams, GitHub/Azure DevOps
+references over fresh API requests. Test records were removed automatically.
+Vue production build succeeded with existing Bootstrap Sass deprecation warnings.
+Date: 2026-10-14
+
+STAGE 2 — DASHBOARD CONFIGURATION
+Status: [V] VERIFIED
+Prerequisite: Stage 1 VERIFIED
+
+[V] Persist per-product module enabled state, module order, widget visibility,
+    widget size, layout, default filters, and default date range.
+[V] Register Executive Overview, Sprint Health, Pull Requests, Security,
+    Testing, Deployment, Technical Debt, and AI Insights modules.
+[V] Implement enable/disable, reorder, resize, save, restore, and default
+    layout workflows.
+[V] Apply saved configuration to the responsive Vue dashboard shell.
+[V] Validate unknown/retired module IDs and invalid layout data safely.
+[V] Verify configuration access boundaries for product and user roles.
+
+Exit gate:
+[V] Configuration survives reload; changes apply to the intended product
+    and access boundary; all layout operations are verified.
+Evidence: API and Vue builds succeeded. Temporary Functions host on port 7072
+          and local PostgreSQL acceptance run verified the eight module rows,
+          default configuration, changed enablement/order/visibility/size/
+          columns/filters/custom dates, round-trip after a separate request,
+          product isolation, restoration to defaults, invalid module/layout
+          rejection (400), Viewer read/denied write/other-product denial,
+          Manager write, and unassigned-user denial. Temporary acceptance
+          records were deleted.
+          Vue responsive grid and configuration controls are implemented;
+          no browser visual inspection is claimed.
+Date: 2026-10-14
+
+STAGE 3 — GITHUB DATA
+Status: [V] VERIFIED — two live syncs to the authorized sandbox repository
+each received/upserted 29 records; the user confirmed source data matches the
+GitHub repository and anonymous read access returned HTTP 401. Local mode
+remains restricted to local services and does not run the live connector.
+Prerequisite: Stage 2 VERIFIED
+
+[x] Configure GitHub repository links through product foundation data and a
+    server-only `GitHubAccessToken` setting for non-Local deployments. The
+    token is never accepted from or returned to browser clients; Local startup
+    rejects the setting and does not register an HTTP source client. No live
+    organization/token has been configured or tested.
+[x] Ingest repository identity, description, URL, visibility, default branch,
+    status, timestamps, archive state, language(s), and size.
+[x] Ingest branches, default/protected status, last commit, and activity.
+[x] Ingest commits with author/committer, dates, branch, message, files,
+    additions, and deletions.
+[x] Ingest pull requests with IDs, title, author, status, lifecycle dates,
+    branches, reviewers/review/approval status, comments, and change counts.
+[x] Ingest releases with name, tag/version, author, dates, draft and
+    prerelease state.
+[x] Ingest Actions workflows/runs with branch, trigger, status/result,
+    duration, and failure reason.
+[x] Ingest Dependabot, Code Scanning, and Secret Scanning alerts with
+    severity, affected package/code, lifecycle dates, status, and resolution.
+[x] Normalize and persist source records in PostgreSQL with source IDs,
+    product/repository links, parent relationships, idempotent upserts,
+    uniqueness, and suitable indexes. Local snapshot persistence was verified.
+[x] Add product-scoped, paginated read APIs and Vue views for repository,
+    branch, commit, pull request, release, Actions, and security records, with
+    explicit empty, error, and >24-hour stale snapshot states.
+[x] Implement GitHub Link-header pagination, retry handling for Retry-After /
+    primary rate-limit reset responses, required-field/ID/parent validation,
+    upsert behavior, and non-secret error reporting in the non-Local REST
+    connector. Rate-limit handling against GitHub itself remains unverified.
+[V] Local fixture acceptance covers all eight record types and scoped fields,
+    repeated import, read-back, missing fields, invalid parents, and product
+    authorization; API/Vue builds pass. It does not claim comparison against
+    an actual GitHub repository.
+[V] Perform an initial live sync against the dedicated sandbox repository.
+    | Evidence: user reports `$sync.isSuccess=True` and
+    `$sync.resultType=Success` for
+    `https://github.com/harshalbapat1990/product-health-stage3-test` on
+    2026-10-15; 29 records received and 29 upserted. Product-scoped read-back
+    returned repository=1, branch=3, commit=6, pull_request=2, release=1,
+    workflow=5, workflow_run=11, security_alert=0. Entity totals sum to 29.
+[V] Repeat the live sync and compare stored repository records with GitHub.
+    | Evidence: user reports second sync succeeded with 29 records received
+    and 29 upserted; API read-back shows 3 branches and 2 pull requests.
+    User confirmed GitHub and API data are in sync; PR #1 is closed and PR #2
+    is open, with source/target branches matching (`add-health-summary` →
+    `main`, `add-project-metadata` → `main`). No duplicate count increase
+    reported.
+[V] Verify GitHub source-data reads reject anonymous requests.
+    | Evidence: user reports the product GitHub data endpoint returned HTTP
+    401 without an Authorization header on 2026-10-15.
+
+Exit gate:
+[V] Two live syncs succeeded in Testing mode with 29 records each. The user
+    confirms repository data is in sync with GitHub, including branch and PR
+    status/branch relationships. Stored category totals are 1 repository,
+    3 branches, 6 commits, 2 pull requests, 1 release, 5 workflows,
+    11 workflow runs, and 0 security alerts. Anonymous reads return 401. GitHub
+    rate-limit retry is implemented but was not forced against the live
+    service. Local mode continues to reject live sync; fixture import/read
+    workflows passed.
+Evidence: API build 0 warnings/errors; Vue production build succeeded with
+          existing Bootstrap Sass deprecation warnings. Local migrations
+          `004_stage3_github_source_data` and
+          `005_github_record_relationships` applied by acceptance runner.
+          Local end-to-end acceptance passed; temporary records cleaned up.
+          User confirmed two successful live syncs to the sandbox repository;
+          each received/upserted 29 records; product read-back returned
+          1 repository, 3 branches, 6 commits, 2 pull requests, 1 release,
+          5 workflows, 11 workflow runs, and 0 security alerts. User confirms
+          source comparison including PR #1 closed and PR #2 open, with source
+          and target branches matching. User reports anonymous product GitHub
+          data read returned HTTP 401. Stage 3 gate verified.
+Date: 2026-10-15
+
+STAGE 4 — AZURE DEVOPS DATA
+Status: [ ] TODO
+Prerequisite: Stage 3 VERIFIED (met 2026-10-15)
+
+[ ] Configure Azure DevOps organization/project integration and credentials
+    in server-side secret storage.
+[ ] Ingest projects with ID, name, state, visibility, and description.
+[ ] Ingest iterations/sprints with ID, name, start/end dates, state, and
+    project association.
+[ ] Ingest Epic, Feature, User Story, Task, and Bug work items with IDs,
+    type, title/description, state/reason, assignment, lifecycle dates,
+    priority/severity, iteration/area/tags, parent/children, points/effort,
+    estimates, remaining work, and completed work.
+[ ] Ingest bug-specific severity, priority, state, assignment, dates, area,
+    sprint, and reopen count.
+[ ] Ingest pipeline definitions/runs with branch, status/result, timestamps,
+    duration, trigger, commit, and failure information.
+[ ] Ingest test plans, suites, cases, runs, results, passed/failed/blocked/
+    skipped counts, and duration.
+[ ] Normalize and persist records and cross-record relationships in
+    PostgreSQL; add typed read APIs.
+[ ] Add Azure DevOps field mapping, pagination, throttling, updates, deleted
+    or inaccessible records, and relationship integrity checks.
+
+Exit gate:
+[ ] Sampled records and parent/iteration/project relationships reconcile
+    with Azure DevOps; missing permissions and empty datasets are explicit.
+Evidence: __________________________________________ Date: __________
+
+STAGE 5 — SYNCHRONIZATION AND FRESHNESS
+Status: [ ] TODO
+Prerequisite: Stages 3 and 4 VERIFIED
+
+[ ] Persist each sync's integration, product, start/end/duration, status,
+    retrieved/inserted/updated/deleted counts, errors, and warnings.
+[ ] Track last successful and failed sync independently for each integration
+    and product.
+[ ] Implement scheduled and manually initiated sync using incremental
+    checkpoints where the source supports them.
+[ ] Make retries safe and writes idempotent; handle partial failures and
+    prevent overlapping runs for the same scope.
+[ ] Expose sync status/history APIs and server-side operational logs/metrics.
+[ ] Show last-synced time, stale state, in-progress state, and failure details
+    in dashboard UI without presenting stale data as current.
+[ ] Verify retry, duplicate delivery, partial failure, timeout, rate limit,
+    and recovery scenarios.
+
+Exit gate:
+[ ] Sync history and freshness are accurate; retries do not duplicate data;
+    failure and stale-data states are visible and operationally actionable.
+Evidence: __________________________________________ Date: __________
+
+STAGE 6 — EXECUTIVE DASHBOARD DATA
+Status: [ ] TODO
+Prerequisite: Stages 3-5 VERIFIED
+
+[ ] Define each metric's source fields, formula, time window, timezone,
+    aggregation grain, and missing-data behavior.
+[ ] Calculate product overview: health/trend, status, current sprint,
+    progress, release status, and open risks.
+[ ] Calculate delivery: sprint completion, planned/completed work, velocity,
+    carry-over, blocked work, scope change, cycle time, and lead time.
+[ ] Calculate engineering: open PRs, PR age/review time, merge rate, commit
+    activity, and release frequency.
+[ ] Calculate quality: open/critical/high-priority bugs, trend, resolution
+    time, and reopened bugs.
+[ ] Calculate security: critical/high/medium/open/new/aging/resolved issues.
+[ ] Calculate CI/CD and testing: build success/failures, deployment
+    frequency/failures/trend, test pass rate, failed/blocked tests, and trends.
+[ ] Persist/query calculated metrics; add typed API contracts and executive
+    dashboard views with filters and loading/empty/error/stale/unavailable
+    states.
+[ ] Add known-input tests for every metric and compare aggregates to source
+    records.
+
+Exit gate:
+[ ] Metric definitions are documented; displayed values reconcile with
+    source records and tested calculations.
+Evidence: __________________________________________ Date: __________
+
+STAGE 7 — SPRINT DASHBOARD DATA
+Status: [ ] TODO
+Prerequisite: Stages 4-6 VERIFIED
+
+[ ] Calculate sprint name, dates, elapsed/remaining days, and work totals for
+    planned, completed, remaining, added, removed, carry-over, and blocked.
+[ ] Calculate count, points, completed percentage, and remaining percentage
+    by Epic, Feature, Story, Task, and Bug.
+[ ] Calculate burndown, velocity, completion rate, scope change, blocked
+    items, bug count, and documented risk indicators.
+[ ] Persist/query sprint snapshots or history needed for trends and
+    represent scope changes accurately.
+[ ] Add typed APIs and Sprint Dashboard views with sprint/product filters,
+    accessible charts/tables, and explicit data freshness.
+[ ] Test sprint boundary dates, reopened/moved work, added/removed scope,
+    missing estimates, empty sprints, and known-input totals.
+
+Exit gate:
+[ ] Sprint metrics and trends reconcile with Azure DevOps for representative
+    current and completed sprints.
+Evidence: __________________________________________ Date: __________
+
+STAGE 8 — SECURITY DASHBOARD DATA
+Status: [ ] TODO
+Prerequisite: Stages 3 and 5 VERIFIED
+
+[ ] Persist vulnerability inventory with repository, alert ID/type, severity,
+    package/code, created/updated dates, age, status, resolution, and
+    resolved date.
+[ ] Preserve sufficient alert history to calculate new/resolved counts and
+    trends without losing closed-alert evidence.
+[ ] Calculate total, critical/high/medium/low, new/resolved/open/aging
+    summaries using documented time boundaries.
+[ ] Calculate vulnerability, critical vulnerability, and resolution trends,
+    and mean time to remediation.
+[ ] Add typed APIs and Security Dashboard views with repository/status/
+    severity filters and accessible summaries.
+[ ] Test reopened alerts, missing resolution dates, severity changes,
+    duplicate alerts, and time-window boundaries.
+
+Exit gate:
+[ ] Inventory, summaries, and trends reconcile with GitHub alerts and
+    documented calculation boundaries.
+Evidence: __________________________________________ Date: __________
+
+STAGE 9 — HEALTH SCORE DATA
+Status: [ ] TODO
+Prerequisite: Stages 6-8 VERIFIED
+
+[ ] Define and document normalization, weights, score bands, missing-data
+    rules, category eligibility, rounding, and calculation version.
+[ ] Obtain review/approval of scoring rules before using scores for decisions.
+[ ] Calculate raw metrics, normalized metrics, category score, weight, and
+    weighted contribution for Delivery, Quality, Security, Testing,
+    Reliability, Documentation, and Technical Debt.
+[ ] Calculate overall score, band, calculation date, previous score, change,
+    and trend; persist immutable/versioned history.
+[ ] Add typed score/history APIs and score cards/trend visualizations with an
+    accessible data equivalent and explanation of unavailable categories.
+[ ] Test deterministic known inputs, boundaries, missing data, score version
+    changes, and historical comparisons.
+
+Exit gate:
+[ ] Scores are deterministic, explainable, versioned, reproducible from
+    stored inputs, and verified against approved examples.
+Evidence: __________________________________________ Date: __________
+
+STAGE 10 — PRODUCT MANAGER DASHBOARD DATA
+Status: [ ] TODO
+Prerequisite: Stage 9 VERIFIED
+
+[ ] Aggregate per-product overall health/trend, category scores, sprint
+    status, open risks, critical vulnerabilities, and release status.
+[ ] Calculate portfolio totals, health categories, average score/trend,
+    security exposure, and delivery trend.
+[ ] Implement filters for Product Manager, Product Owner, Portfolio, Product,
+    Health Status, and Risk Level.
+[ ] Enforce portfolio/product access in aggregate APIs and UI.
+[ ] Add typed APIs and product comparison/portfolio views; handle products
+    with incomplete or stale source data.
+[ ] Test filter combinations, access boundaries, empty portfolios, and
+    reconciliation from product to portfolio totals.
+
+Exit gate:
+[ ] Comparisons and rollups reconcile with product data and respect access
+    permissions for every supported filter.
+Evidence: __________________________________________ Date: __________
+
+STAGE 11 — GLOBAL PRODUCT LEAD DASHBOARD
+Status: [ ] TODO
+Prerequisite: Stage 10 VERIFIED
+
+[ ] Calculate organization totals for products, portfolios, teams, average
+    health, distribution, and trend.
+[ ] Calculate at-risk/critical products, critical security issues, delivery
+    risks, and quality risks.
+[ ] Calculate best/lowest-performing products, largest score improvements/
+    declines, security hotspots, and delivery hotspots.
+[ ] Calculate organization health, security, delivery, quality, and release
+    trends using consistent time windows.
+[ ] Add global lead APIs/views with drill-downs that preserve authorization.
+[ ] Test aggregate reconciliation across organization/portfolio/product,
+    incomplete data behavior, trend windows, and access restrictions.
+
+Exit gate:
+[ ] Organization rollups reconcile with lower levels; comparative/risk views
+    are explainable and authorized.
+Evidence: __________________________________________ Date: __________
+
+STAGE 12 — AI DATA
+Status: [ ] TODO
+Prerequisite: Stages 9-11 VERIFIED
+
+[ ] Define bounded, versioned AI input contracts for scores, changes, sprint,
+    PR, security, bug, deployment, testing, release, risks, and significant
+    changes; pass structured metrics rather than raw source dumps.
+[ ] Add a provider-neutral server-side AI service boundary and secure
+    configuration for the selected deployment provider.
+[ ] Generate executive summary, health explanation, risk identification,
+    recommendations, and release confidence from available structured data.
+[ ] Persist input/output references, generation time, model/provider metadata,
+    and relevant source metric/version IDs for auditability.
+[ ] Add typed APIs and Vue insight views with unavailable, stale, timeout,
+    provider-error, and partial-data states.
+[ ] Add safeguards so claims link to supporting metrics and unsupported
+    values are reported as unavailable rather than invented.
+[ ] Test bounded inputs, missing metrics, provider failure, reproducibility
+    metadata, and output/source traceability.
+
+Exit gate:
+[ ] AI outputs are traceable to current supporting metrics, avoid unsupported
+    claims, and fail safely when configuration or data is unavailable.
+Evidence: __________________________________________ Date: __________
+
+==================================================
+4. CROSS-STAGE ENGINEERING CHECKLIST
+==================================================
+
+Apply these tasks to each relevant stage and record evidence at that stage:
+
+[ ] PostgreSQL schema/index/query changes are versioned, reviewable, and
+    covered by migration and rollback/recovery checks.
+[ ] API contracts are typed, documented, and authorized. No legacy MongoDB
+    data compatibility is required; document any intentionally retained route
+    behavior and rebuild it over the new schema as needed.
+[ ] Credentials/tokens remain server-side; authorization is enforced at API
+    boundaries and secrets are excluded from source control.
+[ ] Local development configuration is fail-closed: API data is limited to
+    loopback PostgreSQL/Azurite; external GitHub/OAuth/telemetry integrations
+    are disabled; verify startup and route behavior after every environment
+    configuration change.
+[ ] Logs and operational signals identify failures without leaking secrets.
+[ ] Loading, empty, error, stale, unavailable, and unauthorized states are
+    explicit in the UI where applicable.
+[ ] Responsive layout, keyboard operation, visible focus, screen-reader
+    labels, touch targets, contrast, and accessible chart equivalents are
+    checked against the project accessibility target.
+[ ] Automated tests cover data mapping, calculation, permissions, and failure
+    behavior; integration checks cover external services when available.
+[ ] Stage documentation and operational instructions are updated.
+
+==================================================
+5. DELIVERY RULES AND ARCHITECTURE
+==================================================
+
+- Complete stages in order. Stage 3 and Stage 4 both depend on the platform
+  and precede Stage 5; do not call synchronization complete until both are
+  integrated.
+- Keep the Azure Functions isolated worker as the application API and the
+  existing Vue.js app in web/ as the Product Health client. Blazor is not the
+  target for this delivery. Add typed API contracts as each stage needs them;
+  keep database credentials and provider secrets server-side.
+- Use PostgreSQL as the clean data store for Product Health and any retained
+  application features. Existing MongoDB data is abandoned; do not migrate it
+  or preserve its data compatibility. Remove MongoDB from the new application
+  path when no remaining feature depends on it.
+- Use the user-provided local PostgreSQL database for development:
+  `dashboard_dev` at localhost:5433. Configure Npgsql with
+  `Host=localhost;Port=5433;Database=dashboard_dev;Username=...;Password=...`.
+  Docker is not used.
+- Use versioned SQL schema migrations and document clean database
+  initialization/reset and recovery. There is no MongoDB data migration.
+- Preserve the pipeline: GitHub/Azure DevOps source data → normalized data →
+  metrics → health scores/history → management aggregates → AI inputs/outputs.
+  Dashboard requests read persisted application data, not external providers.
+- Where the source scope omits formulas or policies, record the definition as
+  a prerequisite task; do not silently select a formula or mark the metric
+  complete before its definition is approved.
+- Keep AI behind a provider-neutral server-side boundary; provider credentials
+  must be configured outside source control.
+- Deliver the user-facing value and acceptance gate for a stage before
+  starting dependent stages. Track blockers with cause, owner, and resolution
+  action rather than silently skipping tasks.
+
+==================================================
+6. CHANGE LOG
+==================================================
+
+2026-10-13 — Initial tracker created from source inspection and the agreed
+             PostgreSQL migration decision. No build, runtime, test, external
+             integration, or migration result is claimed.
+2026-10-13 — Stage 0 implementation added: PostgreSQL schema/repositories,
+             MongoDB migration tool, admin foundation endpoints and Blazor
+             setup screen, local PostgreSQL compose/config template, and setup
+             instructions. This historical Docker-based setup is discontinued
+             and must not be followed. .NET 10 SDK 10.0.400 and database
+             services were not available in the agent environment; acceptance
+             remains blocked.
+2026-10-14 — Delivery direction updated per user decision: Vue.js in web/ is
+             the Product Health frontend; existing Blazor work is prototype
+             only and does not satisfy Vue tasks. Use locally installed
+             PostgreSQL at localhost:5432 with a separate appcatalog database;
+             root .env.postgres created with credential placeholders and is
+             ignored by Git. No Docker or company-managed database is required
+             for development. Abandon the
+             old MongoDB data and remove migration/backward-compatibility work.
+             User verified .NET SDK 10.0.400 with dotnet --version. Local
+             PostgreSQL credentials/permissions, database creation, Vue work,
+             build, and runtime checks remain outstanding.
+2026-10-14 — User reports `.env.postgres` username and password placeholders
+             have been filled locally. Values were not inspected or copied
+             into this tracker; appcatalog creation/connectivity remain
+             unverified.
+2026-10-14 — User-run `dotnet --version` returned 10.0.400 and
+             `dotnet build api/DesignAutomation.AppCatalog.sln` succeeded.
+             Build emitted NETSDK1206 for win7-x64 in
+             Microsoft.Azure.DocumentDB.Core. Runtime/database checks remain
+             pending.
+2026-10-14 — User reports creating `dashboard_dev` on localhost:5433.
+             Updated ignored root `.env.postgres` target while preserving
+             credentials without reading or printing them. User then verified
+             via DBeaver that dashboard_dev is reachable as postgres at
+             127.0.0.1:5433, applied 001_stage0_foundation, and confirmed all
+             expected tables. User reports local.settings.json is configured.
+             API runtime and Vue workflow checks remain pending.
+2026-10-14 — User reports Azurite and the local Functions host started.
+             Sanitized local.settings inspection confirmed Local environment,
+             PostgreSQL on localhost:5433/dashboard_dev, Azurite storage, and
+             no GitHub, OAuth tenant, or Application Insights connection
+             settings. Added fail-closed local API guards for PostgreSQL host,
+             MongoDB fallback, GitHub, OAuth, and telemetry.
+2026-10-14 — DBeaver verification evidence and successful schema application
+             recorded from user-provided query results. User reports Azurite
+             and Functions host are running. User then rebuilt the solution
+             successfully after local-only guards were added. Core Tools
+             `func start` initialized the worker, listed routes, and acquired
+             a host lock; its advisory recommends `dotnet run` for isolated
+             projects. API-to-PostgreSQL route behavior and outbound-network
+             isolation remain unverified.
+2026-10-14 — User restarted the local Functions app using the recommended
+             `dotnet run` command. Core Tools 4.16.0 started, the worker
+             initialized, routes were enumerated, and the host lock lease was
+             acquired. Startup evidence recorded; no route request, database
+             operation, or network trace is claimed.
+2026-10-14 — Stage 0 follow-up implemented: removed the unused MongoDB
+             migrator, MongoDB driver/BSON repositories and serializers, and
+             discontinued Docker compose file; required PostgreSQL for all API
+             environments; added fail-closed loopback PostgreSQL/Azurite
+             checks, password-protected local Admin JWT issuance and JWT-only
+             foundation endpoints; implemented Vue `/foundation` setup/list UI
+             and Vite same-origin proxy pinned to localhost; rewrote README
+             with local setup, secrets, backup/restore/reset instructions.
+             Initial latest-source build attempt was blocked by the user's
+             NuGet.Config permissions. Then restored from the local package
+             cache with a temporary isolated NuGet config and built current API
+             source to temporary output: 0 warnings, 0 errors. Vue dependencies
+             remain uninstalled because offline cache is incomplete. User-side
+             configuration and API/runtime/network checks remain open.
+2026-10-14 — User reports `npm ci` completed (86 packages), `npm run build`
+             succeeded, and the Vite dev server started at localhost:5173.
+             User also reports successful login and product creation. Updated
+             Stage 0 evidence accordingly. Build output contains Bootstrap/Sass
+             deprecation warnings; npm reports 7 high severity audit findings
+             and an unapproved @parcel/watcher install script. No browser/API
+             error appears in the pasted output, so the reported symptom is
+             not identifiable from this attachment. Dependency audit details,
+             App Catalog persistence/route checks, network isolation, and
+             backup/restore remain open.
+2026-10-14 — User reports the saved product remained after API restart and
+             backup/restore to a scratch database succeeded. Functions logs
+             show a successful ListFoundationProducts call and no reported
+             external-service attempts. Removed legacy App Catalog and OAuth
+             API controller source, reduced the gateway and user repository to
+             foundation authentication, and narrowed Vue routing to the
+             foundation page. Added repeatable migration 002 to drop the old
+             apps table and rename app_users to product_health_users. User must
+             apply migration 002 and rebuild/restart the API. Recursive removal
+             of the Blazor and legacy view trees was rejected by automatic
+             approval review; those source files remain and cleanup is not
+             complete. No build is claimed for these latest source changes.
+2026-10-14 — User confirms DBeaver shows migration versions 001 and 002,
+             `product_health_users`, and no `apps`/`app_users` tables. The
+             user's first build of latest API cleanup code found a missing
+             `DesignAutomation.AppCatalog.Security` import for AppIdentity in
+             ICommonGateway; added the import. Subsequent solution build
+             succeeded with 0 warnings and 0 errors. After earlier automatic
+             review rejection, approval was granted for deleting only the
+             repository `blazor/` source tree; removal completed. The latest
+             Functions host route list is still unverified.
+2026-10-14 — User confirms the running Functions host lists only the three
+             Product Health foundation/local-auth functions. Final API project
+             build after removing dormant OAuth/Sentry clients succeeded with
+             0 warnings and 0 errors in a temporary output directory. Vue
+             production build after routing cleanup succeeded; only Bootstrap
+             Sass deprecation warnings remain. Checked local-settings/env
+             ignore rules and Git tracking; a redacted high-confidence secret
+             scan found no credential patterns in nonignored files. Updated
+             Stage 0 tasks and exit gate to VERIFIED. Known npm audit findings
+             are recorded separately and were not modified.
+2026-10-14 — Stage 2 dashboard configuration implemented and verified. Added
+             typed configuration models, an eight-module registry, PostgreSQL
+             JSONB persistence through existing Stage 0 configuration columns,
+             validation and product-scoped GET/PUT endpoints with Stage 1
+             product/portfolio permission checks, and a responsive Vue
+             dashboard at `/dashboard` with product selection, enable/disable,
+             ordering, visibility, size, columns, filters/date range, save,
+             and restore-default controls. No migration was needed: migration
+             001 already creates the configuration columns and seeds all eight
+             module definitions. API build passed with 0 warnings/errors;
+             Vue production build passed with existing Bootstrap Sass
+             deprecation warnings. Temporary local API/database acceptance
+             scenarios passed for round-trip persistence, product isolation,
+             defaults/restore, invalid retired module/layout values, and
+             Viewer cross-product/read/write, Manager write, and unassigned
+             access boundaries; generated records were cleaned up. Browser
+             visual/accessibility inspection was not
+             performed. Stage 2 exit gate recorded VERIFIED.
+2026-10-15 — Fixed the GitHub security alert query to request each documented
+             Dependabot, code scanning, and secret scanning state separately;
+             GitHub does not accept `state=all` for these repository alert
+             endpoints. The user retried and still received HTTP 400, so added
+             safe diagnostic detail (endpoint and GitHub error text; no auth
+             token) to identify the remaining request issue. Rebuild, live
+             retry, and field reconciliation remain pending; Stage 3 remains
+             blocked until they pass.
+2026-10-15 — A fresh sync passed GitHub fetching but import rejected a
+             workflow_run because GitHub's numeric run ID overflowed the
+             connector's Int32 parser and became null. Updated release,
+             workflow, and workflow-run identifiers to parse as Int64.
+             Rebuild and later live retry succeeded; user reports
+             `$sync.isSuccess=True` and `resultType=Success` on 2026-10-15.
+             User reports 29 records received/upserted and read-back counts:
+             repository 1, branch 3, commit 6, PR 2, release 1, workflow 5,
+             workflow run 11, security alert 0. User then confirmed a second
+             successful sync also received/upserted 29 records and source UI
+             comparison: PR #1 closed; PR #2 open; both target `main` and
+             source branches match; overall repository data is in sync.
+             Anonymous read of the product GitHub data endpoint returned
+             HTTP 401. Stage 3 acceptance gate verified; Stage 4 prerequisite
+             is now met. Live rate-limit behavior was not forced.
+2026-10-14 — Stage 3 GitHub source pipeline implemented for Local snapshots
+             and non-Local GitHub REST reads. Added migrations 004/005 for
+             source records, product/repository links, parent relationships,
+             uniqueness, and indexes; normalized mappings for repositories,
+             branches, commits/files, pull requests/reviews/comments, releases,
+             Actions workflows/runs, and Dependabot/Code/Secret Scanning alerts;
+             repeatable transactional imports; product-scoped paginated read
+             APIs; a non-Local explicit sync endpoint using server-only
+             GitHubAccessToken; pagination/rate-limit handling; and Vue GitHub
+             data views with empty/error/stale states. Local mode rejects a
+             configured GitHub token, does not register an HTTP source client,
+             and rejects live sync. API build passed with 0 warnings/errors;
+             Vue build succeeded with existing Sass deprecations. Migrations
+             004 and 005 applied to the configured local database; local fixture
+             acceptance verified all eight record types, scoped fields,
+             idempotent updates, parent/field validation, authorization, and
+             Local live-sync denial; test records were cleaned up. No live
+             GitHub credentials or external repository were used. Stage 3's
+             live reconciliation exit gate remains BLOCKED pending an
+             explicitly authorized non-Local test environment and repository.
+
+END OF STAGE-WISE DELIVERY AND PROGRESS TRACKER
+==================================================

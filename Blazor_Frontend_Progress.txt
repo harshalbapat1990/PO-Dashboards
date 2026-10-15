@@ -1,0 +1,215 @@
+BLAZOR FRONTEND IMPLEMENTATION PROGRESS
+DesignAutomation.AppCatelog
+==================================================
+
+SNAPSHOT DATE: 13 October 2026
+SOURCE PLAN: Blazor_Frontend_Fork_Plan.txt
+BRANCH: blazor-frontend-setup (tracks origin/blazor-frontend-setup)
+OVERALL STATUS: In progress; implementation and runtime validation remain
+                 incomplete.
+
+STATUS KEY
+-----------
+Implemented in code: Relevant source files or behavior are present.
+Partial: Some, but not all, planned work is present.
+Not started / not found: No implementation was found during this inspection.
+Unverified: No evidence of the required build, runtime, or behavioral check.
+
+==================================================
+1. PROGRESS SNAPSHOT
+==================================================
+
+PHASE 0 - FORK AND REPOSITORY FOUNDATION
+Status: In progress
+
+Evidence:
+- The repository contains api/, web/, and blazor/ directories.
+- The current branch is blazor-frontend-setup and tracks
+  origin/blazor-frontend-setup.
+- The origin remote points to the PO-Dashboards GitHub repository.
+- The working tree was clean at the time of this snapshot.
+
+Open work:
+- An upstream remote was not present in the inspected remote list; confirm
+  whether one is required and configure it if so.
+- Verify that origin is the intended fork and confirm baseline API/Vue build
+  behavior.
+- Review secret exclusions and README guidance for Blazor prerequisites,
+  local startup, and configuration.
+
+PHASE 1 - BLAZOR APPLICATION SCAFFOLD
+Status: Partial; runtime validation unverified
+
+Evidence:
+- A .NET 10 Blazor Web App project exists under blazor/ and uses Interactive
+  Server rendering.
+- Feature folders, routes, navigation, layout, shared UI components, and
+  appsettings configuration for API BaseUrl and FunctionKey are present.
+
+Open work:
+- Confirm the full responsive 12/8/4-column design, visual system, light and
+  dark themes, and accessible interaction requirements.
+- Confirm local configuration and secrets are excluded from source control.
+- Build and launch the app and verify shell navigation and error handling.
+
+PHASE 2 - TYPED API CLIENT
+Status: Implemented in code; validation unverified
+
+Evidence:
+- AppCatalogApiClient includes ping, authentication, menus, app and page
+  details, GitHub, repositories, PoCs, users, app create/update/delete, and
+  review-related calls.
+- API response models/helpers and API options are present.
+
+Open work:
+- Review required client headers against the Functions API contract.
+- Review cancellation support, serialization, and failure mapping.
+- Add/run API client and response mapping tests; verify calls against the
+  existing API.
+
+PHASE 3 - AUTHENTICATION COMPATIBILITY
+Status: Partial; validation unverified
+
+Evidence:
+- Token storage, AuthService, authentication state provider, login redirect,
+  callback page, authorization components, and HTTP auth handler are present.
+- The handler adds a timestamp and optional Functions key and sends a stored
+  token as a bearer token.
+
+Open work:
+- Compare token callback/storage and all client headers with the Vue and API
+  implementations, including the Ping/JWT flow.
+- Verify expiry/invalid-token handling, 401 routing, protected API calls, and
+  the treatment of server-only secrets.
+
+PHASE 4 - APP CATALOG PARITY
+Status: Partial; parity validation unverified
+
+Evidence:
+- GitHub, application, repository, PoC, and user pages are present.
+- App create, edit, detail, and review pages are present, along with account,
+  unauthorized, error, and not-found routes.
+- Navigation links to Help, but no Help route was found in the inspected
+  Blazor routes.
+
+Open work:
+- Implement or locate Help and verify the full read-only page inventory,
+  including empty, loading, failure, and unauthorized states.
+- Confirm app delete and all review/update action behavior and role
+  restrictions in the UI.
+- Compare routes, list/detail behavior, navigation, and authentication with
+  Vue. Verify browser titles and responsive behavior.
+
+PHASE 5 - PRODUCT HEALTH VISUAL FOUNDATION
+Status: Early prototype
+
+Evidence:
+- Product Health page, dashboard/KPI components, DashboardService, and
+  ProductHealthService/Metrics are present.
+- The current page presents counts derived from existing App Catalog data.
+
+Open work:
+- Treat these counts as App Catalog-derived indicators, not as verified
+  product health metrics.
+- Implement and verify the planned product dashboard shell, module layout,
+  filters, settings, customization, and loading/empty/error states.
+- Verify responsive behavior, themes, keyboard navigation, and accessibility.
+
+PHASE 6 - CHART.JS INTEGRATION
+Status: Not started / not found
+
+Evidence:
+- No Chart.js package/reference, shared chart components, or chart interop
+  wrapper was found during inspection.
+
+Open work:
+- Add a version-pinned, locally/package-managed Chart.js asset and reusable
+  Blazor interop with create, update, resize, and disposal lifecycle.
+- Add line, bar, and doughnut charts only for defined available metrics.
+- Provide accessible summaries or equivalent tables and validate empty,
+  invalid, updated, resized, multiple-chart, navigation/disposal, and interop
+  failure scenarios.
+
+PHASE 6 - PRODUCT HEALTH DASHBOARD EXPANSION
+Status: Not started / not found for the planned executive, sprint, and
+security dashboard modules and expanded health API contracts
+
+Open work:
+- Scaffold executive, sprint, and security dashboards only with available
+  or explicitly mocked data; label unavailable metrics clearly.
+- Scope Functions API and MongoDB contract expansion separately before
+  presenting additional metrics as real data.
+
+PHASE 7 / MILESTONES M6-M8 - VALIDATION AND FRONTEND TRANSITION
+Status: Not started / unverified
+
+Open work:
+- Complete build, runtime, auth, API regression, parity, responsive,
+  accessibility, and chart validation described by the source plan.
+- Keep Vue available until agreed route, authentication, and workflow parity
+  is demonstrated. Then make the deployment direction decision.
+
+==================================================
+2. DEVELOPMENT PLAN (NEXT WORK SEQUENCE)
+==================================================
+
+1. Confirm repository foundation
+   - Verify origin/fork, upstream expectations, branch setup, and secret
+     exclusions.
+   - Confirm README prerequisites/startup/config guidance and baseline API
+     and Vue behavior.
+
+2. Close API and authentication gaps
+   - Compare Blazor headers, token callback/storage, expiry handling, and
+     401 flow with the Vue client and Functions API.
+   - Fill identified client gaps, then verify anonymous and authenticated
+     calls.
+
+3. Finish read-only App Catalog parity
+   - Complete Help and any missing account/error/not-found behavior.
+   - Standardize loading, empty, failure, and unauthorized states.
+   - Compare list, detail, and navigation workflows with Vue.
+
+4. Finish write workflows
+   - Verify create, update, delete, and review behavior, role restrictions,
+     and failure handling.
+
+5. Establish shared visual foundation
+   - Implement and check responsive layouts, themes, keyboard navigation,
+     visible focus, accessible status, and data presentation.
+   - Label prototype/derived health data accurately.
+
+6. Build dashboard and chart capabilities
+   - Add pinned local Chart.js and reusable interop lifecycle.
+   - Add configurable dashboard modules and executive, sprint, and security
+     shells using only available or clearly mocked data.
+
+7. Expand backend metrics separately
+   - Define and implement required Azure Functions and MongoDB contracts
+     before representing additional Product Health metrics as real data.
+
+8. Validate and decide transition
+   - Build/run Blazor and API; exercise auth and parity workflows; validate
+     responsive, accessibility, and chart scenarios.
+   - Decide between side-by-side hosting, Blazor default, or Vue retirement
+     only after route, authentication, and workflow parity is demonstrated.
+
+==================================================
+3. EVIDENCE AND TRACKER UPDATE RULES
+==================================================
+
+- This snapshot reflects source inspection, not proof of runtime behavior.
+- Git reported a clean working tree and the branch tracking state shown at
+  the top of this file during inspection.
+- No build or test results are claimed by this snapshot.
+- When updating this file, record the update date and cite the source changes
+  or checks that justify each status change.
+- Use "Implemented in code" only when source is present; separately mark
+  builds, runtime checks, authentication, accessibility, and Vue parity as
+  unverified until evidence exists.
+- Keep the production frontend transition open until route, authentication,
+  and workflow parity have been demonstrated.
+
+==================================================
+END OF PROGRESS TRACKER
+==================================================

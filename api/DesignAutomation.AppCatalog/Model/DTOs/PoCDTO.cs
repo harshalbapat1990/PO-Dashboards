@@ -1,10 +1,8 @@
-using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
 
 namespace DesignAutomation.AppCatalog.Model;
 
 /// <summary>DTO Projection of the App Header</summary>
-[BsonIgnoreExtraElements]
 public record PoCDTO
 {
     /// <summary>app ID</summary>

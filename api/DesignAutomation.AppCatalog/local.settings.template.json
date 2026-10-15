@@ -1,0 +1,14 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "DatabaseProvider": "PostgreSql",
+    "PostgreSqlConnectionString": "",
+    "TokenKey": "",
+    "LocalAdminEmail": "admin@local.test",
+    "LocalAdminPassword": "",
+    "CheckClient": "true",
+    "Environment": "Local"
+  }
+}

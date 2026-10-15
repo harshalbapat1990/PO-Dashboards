@@ -1,4 +1,3 @@
-﻿using MongoDB.Bson;
 
 namespace DesignAutomation.AppCatalog.Extensions;
 
@@ -170,21 +169,6 @@ public static class DataTypeConverter
             return result;
 
         return null;
-    }
-
-    /// <summary>Converts a string to a BSON Object ID</summary>
-    /// <returns></returns>
-    public static ObjectId GetObjectIdValue(this string value)
-    {
-        if (String.IsNullOrWhiteSpace(value))
-            return ObjectId.Empty;
-
-        value = value.Trim();
-
-        if (ObjectId.TryParse(value, out ObjectId id))
-            return id;
-
-        return ObjectId.Empty;
     }
 
 }

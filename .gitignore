@@ -5,6 +5,7 @@
 
 # Azure Functions localsettings file
 local.settings.json
+.env.postgres
 *.lscache
 
 ## App Settings often contains senstive info

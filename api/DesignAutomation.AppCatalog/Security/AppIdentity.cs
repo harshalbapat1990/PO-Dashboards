@@ -61,7 +61,9 @@ public class AppIdentity
 
     /// <summary></summary>
     [JsonProperty("userID")]
-    public string UserID => this.Identity.Claims.Where(c => c.Type == "userid").FirstOrDefault()?.Value ?? String.Empty;
+    public string UserID => this.Identity.Claims.FirstOrDefault(c => c.Type == "userid")?.Value
+        ?? this.Identity.Claims.FirstOrDefault(c => c.Type == "id")?.Value
+        ?? String.Empty;
 
     /// <summary></summary>
     [JsonProperty("name")]
