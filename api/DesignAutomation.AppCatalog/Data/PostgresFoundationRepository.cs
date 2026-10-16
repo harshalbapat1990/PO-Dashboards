@@ -1,5 +1,6 @@
 using DesignAutomation.AppCatalog.Model;
 using Npgsql;
+using NpgsqlTypes;
 
 namespace DesignAutomation.AppCatalog.Data;
 
@@ -10,7 +11,7 @@ public sealed class PostgresFoundationRepository(NpgsqlDataSource dataSource) : 
     {
         var products = new Dictionary<Guid, FoundationProductSummary>();
         await using var connection = await dataSource.OpenConnectionAsync();
-        const string sql = "SELECT o.id,o.name,pf.id,pf.name,p.id,p.name,p.description,p.product_type,p.product_owner,p.product_manager,p.status,p.global_product_lead,p.engineering_manager,p.scrum_master,p.security_lead,p.start_date,p.target_date FROM organizations o JOIN portfolios pf ON pf.organization_id=o.id JOIN products p ON p.portfolio_id=pf.id ORDER BY o.name,pf.name,p.name";
+        const string sql = "SELECT o.id,o.name,pf.id,pf.name,p.id,p.name,p.description,p.product_type,p.product_owner,p.product_manager,p.status,p.global_product_lead,p.engineering_manager,p.scrum_master,p.security_lead,p.start_date,p.target_date,COALESCE((SELECT organization FROM integrations i WHERE i.product_id=p.id AND i.provider='AzureDevOps' AND i.organization<>'' ORDER BY i.updated_at DESC LIMIT 1),'') FROM organizations o JOIN portfolios pf ON pf.organization_id=o.id JOIN products p ON p.portfolio_id=pf.id ORDER BY o.name,pf.name,p.name";
         await using (var command = new NpgsqlCommand(sql, connection))
         await using (var reader = await command.ExecuteReaderAsync())
         {
@@ -25,7 +26,8 @@ public sealed class PostgresFoundationRepository(NpgsqlDataSource dataSource) : 
                     Status = reader.GetString(10), GlobalProductLead = reader.GetString(11), EngineeringManager = reader.GetString(12),
                     ScrumMaster = reader.GetString(13), SecurityLead = reader.GetString(14),
                     StartDate = reader.IsDBNull(15) ? null : reader.GetFieldValue<DateOnly>(15),
-                    TargetDate = reader.IsDBNull(16) ? null : reader.GetFieldValue<DateOnly>(16)
+                    TargetDate = reader.IsDBNull(16) ? null : reader.GetFieldValue<DateOnly>(16),
+                    AzureOrganization = reader.GetString(17)
                 };
                 products.Add(summary.ProductId, summary);
             }
@@ -214,7 +216,15 @@ public sealed class PostgresFoundationRepository(NpgsqlDataSource dataSource) : 
         if (request.StartDate.HasValue && request.TargetDate.HasValue && request.TargetDate < request.StartDate) throw new ArgumentException("Target date cannot be earlier than the start date.");
         if ((request.Teams?.Count ?? 0) > 100 || (request.Teams ?? []).Any(t => t is null || string.IsNullOrWhiteSpace(t.Name) || t.Name.Trim().Length > 200 || (t.Members?.Count ?? 0) > 500))
             throw new ArgumentException("Provide up to 100 named teams, with no more than 500 members per team.");
+        if (request.SyncFrequencyMinutes is < 1 or > 10080)
+            throw new ArgumentException("Sync frequency must be between 1 and 10080 minutes.");
         EnsureUniqueTeams(request.Teams);
+        var azureProjects = (request.AzureProjects ?? []).Where(project => project is not null).ToList();
+        if (azureProjects.Count > 100 || azureProjects.Any(project => string.IsNullOrWhiteSpace(project.Id)
+            || string.IsNullOrWhiteSpace(project.Name) || project.Id.Trim().Length > 200 || project.Name.Trim().Length > 200))
+            throw new ArgumentException("Provide up to 100 Azure DevOps projects with IDs and names no longer than 200 characters.");
+        if (azureProjects.Select(project => project.Id.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count() != azureProjects.Count)
+            throw new ArgumentException("Azure DevOps project IDs must be unique within a product.");
         await using var connection = await dataSource.OpenConnectionAsync();
         await using var transaction = await connection.BeginTransactionAsync();
         await using (var command = new NpgsqlCommand("UPDATE products SET name=@name,description=@description,product_type=@type,product_owner=@owner,product_manager=@manager,status=@status,global_product_lead=@lead,engineering_manager=@eng,scrum_master=@scrum,security_lead=@security,start_date=@start,target_date=@target,updated_at=now() WHERE id=@id", connection, transaction))
@@ -237,6 +247,30 @@ public sealed class PostgresFoundationRepository(NpgsqlDataSource dataSource) : 
             foreach (var member in (team.Members ?? []).Where(m => !string.IsNullOrWhiteSpace(m)).Select(m => m.Trim()).Distinct(StringComparer.OrdinalIgnoreCase))
             { ValidateLength(member, 320, "Team member"); await using var add = new NpgsqlCommand("INSERT INTO team_members(team_id,member_email) VALUES(@team,@member)", connection, transaction); add.Parameters.AddWithValue("team", teamId); add.Parameters.AddWithValue("member", member); await add.ExecuteNonQueryAsync(); }
         }
+        var projectIds = azureProjects.Select(project => project.Id.Trim()).ToArray();
+        foreach (var project in azureProjects)
+        {
+            await using var upsertProject = new NpgsqlCommand("INSERT INTO product_azure_projects(product_id,project_id,project_name) VALUES(@product,@id,@name) ON CONFLICT(product_id,project_id) DO UPDATE SET project_name=EXCLUDED.project_name", connection, transaction);
+            upsertProject.Parameters.AddWithValue("product", productId);
+            upsertProject.Parameters.AddWithValue("id", project.Id.Trim());
+            upsertProject.Parameters.AddWithValue("name", project.Name.Trim());
+            await upsertProject.ExecuteNonQueryAsync();
+        }
+        await using (var removeProjects = new NpgsqlCommand("DELETE FROM product_azure_projects WHERE product_id=@product AND NOT (project_id = ANY(@projectIds))", connection, transaction))
+        {
+            removeProjects.Parameters.AddWithValue("product", productId);
+            removeProjects.Parameters.AddWithValue("projectIds", NpgsqlDbType.Array | NpgsqlDbType.Text, projectIds);
+            await removeProjects.ExecuteNonQueryAsync();
+        }
+        await using (var removeIntegrations = new NpgsqlCommand("DELETE FROM integrations WHERE product_id=@product AND provider='AzureDevOps' AND NOT (repository_or_project = ANY(@projectIds))", connection, transaction))
+        {
+            removeIntegrations.Parameters.AddWithValue("product", productId);
+            removeIntegrations.Parameters.AddWithValue("projectIds", NpgsqlDbType.Array | NpgsqlDbType.Text, projectIds);
+            await removeIntegrations.ExecuteNonQueryAsync();
+        }
+        foreach (var project in azureProjects)
+            await UpsertIntegration(connection, transaction, productId, "AzureDevOps", request.AzureOrganization ?? string.Empty,
+                project.Id.Trim(), request.AzureSecretReference ?? string.Empty, request.SyncFrequencyMinutes);
         await transaction.CommitAsync(); return true;
     }
 
@@ -273,5 +307,16 @@ public sealed class PostgresFoundationRepository(NpgsqlDataSource dataSource) : 
         command.Parameters.AddWithValue("source", source); command.Parameters.AddWithValue("secret", secretReference.Trim());
         command.Parameters.AddWithValue("frequency", frequency);
         await command.ExecuteNonQueryAsync();
+    }
+
+    private static async Task UpsertIntegration(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid productId,
+        string provider, string organization, string source, string secretReference, int frequency)
+    {
+        await using var update = new NpgsqlCommand("UPDATE integrations SET secret_reference=@secret,sync_frequency_minutes=@frequency,updated_at=now() WHERE product_id=@product AND provider=@provider AND organization=@organization AND repository_or_project=@source", connection, transaction);
+        update.Parameters.AddWithValue("product", productId); update.Parameters.AddWithValue("provider", provider);
+        update.Parameters.AddWithValue("organization", organization.Trim()); update.Parameters.AddWithValue("source", source);
+        update.Parameters.AddWithValue("secret", secretReference.Trim()); update.Parameters.AddWithValue("frequency", frequency);
+        if (await update.ExecuteNonQueryAsync() > 0) return;
+        await InsertIntegration(connection, transaction, productId, provider, organization, source, secretReference, frequency);
     }
 }

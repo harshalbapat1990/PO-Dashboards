@@ -7,6 +7,7 @@
       <nav class="d-flex gap-3 mt-2" aria-label="Main navigation">
         <RouterLink to="/dashboard">Dashboard</RouterLink>
         <RouterLink to="/github-data">GitHub data</RouterLink>
+        <RouterLink to="/azure-devops-data">Azure DevOps data</RouterLink>
         <RouterLink to="/foundation">Foundation</RouterLink>
       </nav>
     </div>

@@ -47,15 +47,29 @@ var host = new HostBuilder()
         services.AddSingleton<IFoundationAccessRepository, PostgresFoundationAccessRepository>();
         services.AddSingleton<IDashboardConfigurationRepository, PostgresDashboardConfigurationRepository>();
         services.AddSingleton<IGitHubSourceDataRepository, PostgresGitHubSourceDataRepository>();
+        services.AddSingleton<IAzureDevOpsSourceDataRepository, PostgresAzureDevOpsSourceDataRepository>();
 
         if (isLocal && !string.IsNullOrWhiteSpace(appConfig.GitHubAccessToken))
             throw new InvalidOperationException("GitHubAccessToken must not be configured in Local mode; local development never connects to GitHub.");
+        if (isLocal && !string.IsNullOrWhiteSpace(appConfig.AzureDevOpsAccessToken))
+            throw new InvalidOperationException("AzureDevOpsAccessToken must not be configured in Local mode; local development never connects to Azure DevOps.");
         if (!isLocal && !string.IsNullOrWhiteSpace(appConfig.GitHubAccessToken))
         {
             services.AddHttpClient<IGitHubSnapshotSource, GitHubRestSnapshotSource>(client =>
             {
                 client.Timeout = TimeSpan.FromMinutes(5);
                 client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", appConfig.GitHubAccessToken.Trim());
+            });
+        }
+        if (!isLocal && !string.IsNullOrWhiteSpace(appConfig.AzureDevOpsAccessToken))
+        {
+            services.AddHttpClient<IAzureDevOpsSnapshotSource, AzureDevOpsRestSnapshotSource>(client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(10);
+                var credential = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($":{appConfig.AzureDevOpsAccessToken.Trim()}"));
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credential);
+                client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("ProductHealthDashboard/1.0");
             });
         }
 

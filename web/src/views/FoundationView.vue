@@ -189,7 +189,10 @@ function editProduct(item) {
     productManager: item.productManager, globalProductLead: item.globalProductLead,
     engineeringManager: item.engineeringManager, scrumMaster: item.scrumMaster, securityLead: item.securityLead,
     status: item.status, startDate: item.startDate || '', targetDate: item.targetDate || '',
+    azureOrganization: item.azureOrganization || '',
     teamsText: (item.teams || []).map((team) => `${team.name} | ${(team.members || []).join(', ')}`).join('\n'),
+    azureProjectsText: (item.azureProjects || []).map((project) => `${project.id} | ${project.name}`).join('\n'),
+    githubRepositoriesText: (item.githubRepositories || []).join('\n'),
   })
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }

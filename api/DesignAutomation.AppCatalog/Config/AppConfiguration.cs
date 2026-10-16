@@ -14,4 +14,6 @@ public sealed class AppConfiguration
     public bool CheckClient { get; set; } = true;
     /// <summary>Server-only GitHub token. Must not be configured in Local mode.</summary>
     public string GitHubAccessToken { get; set; } = string.Empty;
+    /// <summary>Server-only Azure DevOps PAT. Must not be configured in Local mode.</summary>
+    public string AzureDevOpsAccessToken { get; set; } = string.Empty;
 }

@@ -357,33 +357,93 @@ Evidence: API build 0 warnings/errors; Vue production build succeeded with
 Date: 2026-10-15
 
 STAGE 4 — AZURE DEVOPS DATA
-Status: [ ] TODO
+Status: [~] IMPLEMENTED; local and live-source verification remains open
 Prerequisite: Stage 3 VERIFIED (met 2026-10-15)
 
-[ ] Configure Azure DevOps organization/project integration and credentials
-    in server-side secret storage.
-[ ] Ingest projects with ID, name, state, visibility, and description.
-[ ] Ingest iterations/sprints with ID, name, start/end dates, state, and
-    project association.
-[ ] Ingest Epic, Feature, User Story, Task, and Bug work items with IDs,
-    type, title/description, state/reason, assignment, lifecycle dates,
-    priority/severity, iteration/area/tags, parent/children, points/effort,
-    estimates, remaining work, and completed work.
-[ ] Ingest bug-specific severity, priority, state, assignment, dates, area,
-    sprint, and reopen count.
-[ ] Ingest pipeline definitions/runs with branch, status/result, timestamps,
+[x] Preserve organization/project references in product setup; keep all
+    credentials out of the browser and do not configure a live connector in
+    Local mode. No Azure DevOps requests are made by the development API.
+[x] Define normalized local snapshot contracts for projects (ID, name,
+    state, visibility, description) and iterations/sprints (ID, name, dates,
+    state, project association).
+[x] Define normalized work item records for Epic, Feature, User Story, Task,
+    and Bug, including title/description, state/reason, assignment, lifecycle
+    dates, priority/severity, iteration/area/tags, hierarchy, points/effort,
+    estimates, remaining/completed work, and bug reopen count.
+[x] Define pipeline definitions/runs with branch, status/result, timestamps,
     duration, trigger, commit, and failure information.
-[ ] Ingest test plans, suites, cases, runs, results, passed/failed/blocked/
-    skipped counts, and duration.
-[ ] Normalize and persist records and cross-record relationships in
-    PostgreSQL; add typed read APIs.
-[ ] Add Azure DevOps field mapping, pagination, throttling, updates, deleted
-    or inaccessible records, and relationship integrity checks.
+[x] Define test plans, suites, cases, runs, results, result counts, and
+    duration fields.
+[x] Add migration 006 for project-scoped normalized JSONB records and
+    relational links with PostgreSQL foreign keys and indexes.
+[x] Add transactional snapshot upserts, complete-snapshot removal of missing
+    records, duplicate/field/project validation, relationship validation,
+    and paged typed read API.
+[x] Restrict snapshot imports to authenticated Admin users in Local mode;
+    authorize reads using product access. Non-Local snapshot-import requests
+    return 404.
+[x] Add explicit non-Local live sync using server-side AzureDevOpsAccessToken
+    configuration and the organization stored with the linked project.
+    Local startup rejects an Azure DevOps token and does not register the
+    client; Local sync returns a message directing the operator to fixture
+    import. Sync accepts only a linked project ID and is management-authorized.
+[x] Add Azure DevOps REST mapping for projects, team iterations, work item
+    hierarchy and scoped fields, pipeline definitions/runs, test plans/suites/
+    cases/runs/results, and their normalized relationships.
+[x] Add bounded collection pagination, 429/503 Retry-After handling, a
+    20,000-work-item safety limit, and fail-closed handling for inaccessible
+    APIs or unresolved non-root iteration paths so an incomplete live fetch
+    is not imported as a complete snapshot.
+[x] Persist the Azure DevOps organization alongside linked projects and return
+    it to Foundation editing; sync resolves organization server-side instead
+    of trusting an organization supplied in the sync request.
+[x] Add an offline fixture covering every normalized entity type and the
+    representative work-item, iteration, pipeline, and test relationships.
+    Corrected Task 121 and Bug 122 sprint links after the first local import
+    rejected their declared iterationId values (2026-10-15); fixture now has
+    14 relationships. User confirmed successful import and matching database
+    counts (2026-10-15).
+[x] Add Vue product/project/type filters, snapshot JSON import, record views,
+    and paging at /azure-devops-data. Import/read requests go only to the
+    configured application API.
+[x] Persist Azure DevOps project links when editing a product in Foundation;
+    preserve unchanged links and remove links explicitly removed from the
+    submitted configuration.
+[V] User confirmed migration 006 in schema_migrations and both source-data
+    tables in dashboard_dev (2026-10-15).
+[V] API build succeeded in a separate output directory to avoid the running
+    Functions host's locked DLL (0 warnings, 0 errors, 2026-10-15).
+[V] Vue production build succeeded (2026-10-15); existing Sass dependency
+    deprecation warnings remain.
+[V] User confirmed a successful local fixture import: 14 records total
+    (project, iteration, pipeline/run, five work items, test plan/suite/case/
+    run/result) and 14 persisted relationships (2026-10-15).
+[V] Relationship validation exercised against local PostgreSQL: the API
+    rejected work items whose iterationId lacked a matching relationship;
+    after correcting the fixture, the import succeeded with all 14 links
+    persisted (user evidence, 2026-10-15).
+[V] API paging verified by user for work_item records: total=5, limit=2;
+    offset 0 returned IDs 100 and 110, offset 2 returned IDs 120 and 121.
+    Date: 2026-10-15.
+[ ] Verify Vue record read-back, complete-snapshot deletion, malformed-record
+    rejection, anonymous/role authorization, and Local-mode sync rejection
+    against the running local API and PostgreSQL.
+[ ] Configure the live connector in a non-Local environment with a server-side
+    secret and run it against a permitted Azure DevOps test project. No live
+    Azure DevOps request has been made during local development.
 
 Exit gate:
-[ ] Sampled records and parent/iteration/project relationships reconcile
+[ ] Sampled live records and parent/iteration/project relationships reconcile
     with Azure DevOps; missing permissions and empty datasets are explicit.
-Evidence: __________________________________________ Date: __________
+    The local fixture proves contract and persistence shape only and does not
+    count as reconciliation against an Azure DevOps organization.
+Evidence: Local contracts, PostgreSQL repository, fixture/import and read APIs,
+Vue page, non-Local REST connector and sync endpoint are implemented. User
+verified migration, import counts, relationship validation, and paging. API
+build and Vue production build passed on 2026-10-15. Vue read-back, deletion,
+malformed-input/auth checks, local sync-disabled runtime check, and live Azure
+DevOps reconciliation remain open. No Azure DevOps request was made.
+Date: 2026-10-15
 
 STAGE 5 — SYNCHRONIZATION AND FRESHNESS
 Status: [ ] TODO

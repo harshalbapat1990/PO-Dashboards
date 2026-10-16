@@ -62,6 +62,7 @@ public sealed record FoundationProductSummary
     [JsonProperty("targetDate")] public DateOnly? TargetDate { get; init; }
     [JsonProperty("githubRepositories")] public List<string> GitHubRepositories { get; init; } = [];
     [JsonProperty("azureProjects")] public List<FoundationAzureProjectRequest> AzureProjects { get; init; } = [];
+    [JsonProperty("azureOrganization")] public string AzureOrganization { get; init; } = string.Empty;
     [JsonProperty("teams")] public List<FoundationTeamRequest> Teams { get; init; } = [];
 }
 

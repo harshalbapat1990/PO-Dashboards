@@ -47,7 +47,7 @@ no provider sync runs in Stage 0.
 4. Ensure `AzureWebJobsStorage` is `UseDevelopmentStorage=true` and start
    Azurite.
 5. Apply SQL migrations in filename order using DBeaver or `psql`:
-   `001_stage0_foundation.sql` through `005_github_record_relationships.sql`.
+   `001_stage0_foundation.sql` through `006_stage4_azure_devops_source_data.sql`.
    Each script is safe to reapply and records its version in `schema_migrations`.
    Migration 002 drops the unused legacy `apps` table and renames the minimal
    identity table for Product Health. Back up first; old App Catalog data is
@@ -104,6 +104,31 @@ official endpoint documentation for [branches and contents](https://docs.github.
 The connector follows GitHub's [pagination links](https://docs.github.com/en/rest/using-the-rest-api/using-pagination-in-the-rest-api)
 and rate-limit retry guidance (including `Retry-After`); it never persists the
 secret value returned by secret scanning.
+
+## Azure DevOps data
+
+The `/azure-devops-data` view reads normalized project, iteration, work item,
+pipeline, and test data from PostgreSQL. In Local mode the API never creates an
+Azure DevOps client or makes outbound requests. An Admin can import the
+normalized fixture/snapshot through
+`POST /api/v1/foundation/products/{productId}/azure-devops/import`; the linked
+project ID must match and the entire import is validated and committed as one
+transaction. `GET /api/v1/foundation/products/{productId}/azure-devops/data`
+supports `projectId`, `entityType`, `limit`, and `offset` query parameters.
+
+Outside Local mode, an explicitly invoked
+`POST /api/v1/foundation/products/{productId}/azure-devops/sync` can fetch a
+linked project and persist a complete snapshot. The request body contains only
+`projectId`; the organization comes from the product's server-side integration
+configuration. Configure `AzureDevOpsAccessToken` only in the deployment's
+secret environment (for example, a Key Vault-backed app setting). The API
+rejects this setting in Local mode. The sync endpoint requires product
+management access, and the project must already be linked to the product.
+Sync requests paginate collection APIs, retry throttled/service-unavailable
+responses within a bounded delay, and fail without replacing the current
+snapshot when the source returns an error. Live sync and source reconciliation
+must be validated in a non-Local environment; they are not part of local
+development verification.
 
 ## Configure and run Vue
 
